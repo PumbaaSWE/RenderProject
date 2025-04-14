@@ -2,20 +2,19 @@
 #ifndef stuff
 #define stuff
 
-//#include <vulkan/vulkan.h>
 #include <vector>
 #include <iostream>
 #include <string>
 #include <optional>
 #include <set>
 #include <algorithm>
-
-
+#include <functional>
+#include <deque>
 
 
 
 #define VK_USE_PLATFORM_WIN32_KHR //if windows
-
+#define DISABLE_VULKAN_OBS_CAPTURE = 1
 
 #include <vulkan/vulkan.h>
 
@@ -27,6 +26,14 @@
 #undef min
 #endif
 
+#ifdef _DEBUG
+#define DEBUGPRINTL(x)																											\
+{																																\
+	std::cout << "line: " << __LINE__ << " file: " << __FILE__ << " func: " << __func__ << "msg: " << x << std::endl;			\
+}																																\																										
+#else
+#define DEBUGPRINTL(x) ((void)0);
+#endif
 
 template<class ...Args>
 void printl(Args&&... args) {
@@ -36,6 +43,26 @@ void printl(Args&&... args) {
 namespace tde {
 	enum TdeResult { Success, Fail };
 }
+
+
+struct DeletionQueue
+{
+	std::deque<std::function<void()>> deletors;
+
+	void push_function(std::function<void()>&& function) {
+		deletors.push_back(function);
+	}
+
+	void flush() {
+		// reverse iterate the deletion queue to execute all the functions
+		for (auto it = deletors.rbegin(); it != deletors.rend(); it++) {
+			(*it)(); //call functors
+		}
+
+		deletors.clear();
+	}
+};
+
 
 //REMOVE! this is so that stuff deas not get grayed out during development!!
 //#define TDE_IMPLEMENTATION

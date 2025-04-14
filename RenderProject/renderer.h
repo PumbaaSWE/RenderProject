@@ -10,6 +10,9 @@ namespace tde{
 
         //VkCommandPool commandPool; //why is this here??
         VkCommandBuffer mainCommandBuffer;
+        VkSemaphore imageAvailableSemaphore;
+        VkSemaphore renderFinishedSemaphore;
+        VkFence inFlightFence;
     };
 
 
@@ -42,7 +45,7 @@ namespace tde{
         VkExtent2D swapchainExtent;
         VkSwapchainKHR swapchain = VK_NULL_HANDLE;
 
-        std::vector<VkImage> swapChainImages;
+        std::vector<VkImage> swapchainImages;
         VkFormat swapChainImageFormat = {};
         VkExtent2D swapChainExtent = {};
 
@@ -55,7 +58,7 @@ namespace tde{
         VkPipeline graphicsPipeline = VK_NULL_HANDLE;
 
       //  std::vector<VkFramebuffer> swapChainFramebuffers;
-        VkCommandPool commandPool;
+        VkCommandPool commandPool = VK_NULL_HANDLE;
 
         VkRenderPass renderPass = VK_NULL_HANDLE;
 
@@ -82,25 +85,30 @@ namespace tde{
 
         int currentFrame = 0;
         bool framebufferResized = false;
-
+        int frameNumber = 0;
         FrameData frames[MAX_FRAMES_IN_FLIGHT];
 
-        FrameData& get_current_frame() { return frames[currentFrame]; };
+        FrameData& get_current_frame() { return frames[frameNumber % MAX_FRAMES_IN_FLIGHT]; };
 
 		Renderer();
 		~Renderer();
 
 		void Create(std::vector<void*> args, int width, int height);
 
+        void BeginFrame();
+
+        void SetViewport(int width, int height);
+
 	private:
+        bool resize_requested = false;
 		void Init(int width, int height);
-		TdeResult CreateSurfaceOnWindows(HWND hwnd, HINSTANCE hInstance);
-		void init_vulkan();
-        void CreateSwapChain(uint32_t width, uint32_t height);
+		void CreateSurfaceOnWindows(HWND hwnd, HINSTANCE hInstance);
+        void CreateSwapchain(uint32_t width, uint32_t height);
+        void ResizeSwapchain();
         void DestroySwapchain();
-		void init_commands();
-		void init_sync_structures();
-		void Terminate();
+		void InitCommands();
+		void InitSyncStructures();
+		void Destroy();
 
 	};
 

@@ -349,7 +349,7 @@ namespace tde {
 			Time::deltaTime = deltaTime;
 			Update(deltaTime);
 
-			//renderer->Begin();
+			renderer->BeginFrame();
 
 			Render(deltaTime, lag / Time::fixedDeltaTime);
 

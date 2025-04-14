@@ -2,9 +2,17 @@
 #define INIT_IMPLEMENTATION
 #include "init_helper.h"
 
+#define VK_INIT_IMPLEMENTATION
+//#include "vk_init.h"
+
+#define VK_IMAGES_IMPLEMENTATION
+#include "vk_images.h"
+
+//this spart below should be copied with implementation guard once we get to it
+
 namespace tde {
 
-	void vk_check(VkResult err, const char* msg = "Check error") {
+	inline void vk_check(VkResult err, const char* msg = "Default") {
 		if (err) {
 			std::cout << msg << " error code: " << err << std::endl;
 			abort();//throw?
@@ -19,9 +27,10 @@ namespace tde {
 
 	Renderer::~Renderer()
 	{
-		Terminate();
+		Destroy();
 	}
 
+	//Creating instance and setting up validation
 	void Renderer::Init(int width, int height) {
 		this->width = width;
 		this->height = height;
@@ -74,12 +83,14 @@ namespace tde {
 		graphicsQueueFamily = deviceBuilder.graphicsQueueFamily;
 
 		//
-		CreateSwapChain(width, height);
+		CreateSwapchain(width, height);
 
-		init_commands();
+		InitCommands();
+
+		InitSyncStructures();
 	}
 
-	TdeResult Renderer::CreateSurfaceOnWindows(HWND hwnd, HINSTANCE hInstance) {
+	void Renderer::CreateSurfaceOnWindows(HWND hwnd, HINSTANCE hInstance) {
 
 		VkWin32SurfaceCreateInfoKHR surfaceInfo{ VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
 		surfaceInfo.pNext = VK_NULL_HANDLE;
@@ -91,18 +102,19 @@ namespace tde {
 			throw std::runtime_error("failed to create instance!");
 		}
 
-		return Success;
 	}
 
-	void Renderer::Terminate() {
+	void Renderer::Destroy() {
 
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			vkDestroyBuffer(device, uniformBuffers[i], nullptr);
-			vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
-		}
+		vkDeviceWaitIdle(device);
 
-		vkDestroyDescriptorPool(device, descriptorPool, nullptr);
-		vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+		//for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+		//	vkDestroyBuffer(device, uniformBuffers[i], nullptr);
+		//	vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
+		//}
+
+		//vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+		//vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 
 		// destroy model buffers instead of hardcoded
 
@@ -120,9 +132,13 @@ namespace tde {
 		vkDestroyRenderPass(device, renderPass, nullptr);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
-			vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
-			vkDestroyFence(device, inFlightFences[i], nullptr);
+
+			vkDestroyFence(device, frames[i].inFlightFence, nullptr);
+			vkDestroySemaphore(device, frames[i].renderFinishedSemaphore, nullptr);
+			vkDestroySemaphore(device, frames[i].imageAvailableSemaphore, nullptr);
+			//vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
+			//vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
+			//vkDestroyFence(device, inFlightFences[i], nullptr);
 		}
 
 		vkDestroyCommandPool(device, commandPool, nullptr);
@@ -138,7 +154,19 @@ namespace tde {
 		//PRINTL("**RENDERER DESTRUCT**");
 	}
 
-	void Renderer::CreateSwapChain(uint32_t width, uint32_t height) {
+	void Renderer::DestroySwapchain(){
+		vkDestroySwapchainKHR(device, swapchain, nullptr);
+
+		// destroy swapchain resources
+		for (int i = 0; i < swapchainImageViews.size(); i++) {
+
+			vkDestroyImageView(device, swapchainImageViews[i], nullptr);
+		}
+	}
+
+
+	//TODO Use a builder to shrink it a bit
+	void Renderer::CreateSwapchain(uint32_t width, uint32_t height) {
 		SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
 
 		VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
@@ -155,13 +183,13 @@ namespace tde {
 		VkSwapchainCreateInfoKHR createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 		createInfo.surface = surface;
-
+		
 		createInfo.minImageCount = imageCount;
 		createInfo.imageFormat = surfaceFormat.format;
 		createInfo.imageColorSpace = surfaceFormat.colorSpace;
 		createInfo.imageExtent = extent;
 		createInfo.imageArrayLayers = 1;
-		createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+		createInfo.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
 		QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface); //we already found this!!
 		uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
@@ -187,13 +215,16 @@ namespace tde {
 
 		createInfo.oldSwapchain = VK_NULL_HANDLE; //in case of invalidation of current swap chain
 
+		
+
+
 		if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapchain) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create swap chain!");
 		}
 
 		vkGetSwapchainImagesKHR(device, swapchain, &imageCount, nullptr);
-		swapChainImages.resize(imageCount);
-		vkGetSwapchainImagesKHR(device, swapchain, &imageCount, swapChainImages.data());
+		swapchainImages.resize(imageCount);
+		vkGetSwapchainImagesKHR(device, swapchain, &imageCount, swapchainImages.data());
 
 		//needed later
 		swapChainImageFormat = surfaceFormat.format;
@@ -201,41 +232,141 @@ namespace tde {
 
 	}
 
-	void Renderer::DestroySwapchain(){
-		vkDestroySwapchainKHR(device, swapchain, nullptr);
 
-		// destroy swapchain resources
-		for (int i = 0; i < swapchainImageViews.size(); i++) {
-
-			vkDestroyImageView(device, swapchainImageViews[i], nullptr);
-		}
-	}
-
-
-	void Renderer::init_commands()
+	void Renderer::InitCommands()
 	{
-		//create a command pool for commands submitted to the graphics queue.
-		//we also want the pool to allow for resetting of individual command buffers
-		VkCommandPoolCreateInfo commandPoolInfo = {};
-		commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-		commandPoolInfo.pNext = nullptr;
-		commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-		commandPoolInfo.queueFamilyIndex = graphicsQueueFamily;
+
+		VkCommandPoolCreateInfo commandPoolInfo = vkinit::command_pool_create_info(graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+
 		vk_check(vkCreateCommandPool(device, &commandPoolInfo, nullptr, &commandPool));
 
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 
 
 			// allocate the default command buffer that we will use for rendering
-			VkCommandBufferAllocateInfo cmdAllocInfo = {};
-			cmdAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-			cmdAllocInfo.pNext = nullptr;
-			cmdAllocInfo.commandPool = commandPool;
-			cmdAllocInfo.commandBufferCount = 1;
-			cmdAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+			VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(commandPool, 1);
 
 			vk_check(vkAllocateCommandBuffers(device, &cmdAllocInfo, &frames[i].mainCommandBuffer));
 		}
 	}
 
+	void Renderer::InitSyncStructures() {
+		//create syncronization structures
+		//one fence to control when the gpu has finished rendering the frame,
+		//and 2 semaphores to syncronize rendering with swapchain
+		//we want the fence to start signalled so we can wait on it on the first frame
+		VkFenceCreateInfo fenceCreateInfo = vkinit::fence_create_info(VK_FENCE_CREATE_SIGNALED_BIT);
+		VkSemaphoreCreateInfo semaphoreCreateInfo = vkinit::semaphore_create_info();
+
+		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+			vk_check(vkCreateFence(device, &fenceCreateInfo, nullptr, &frames[i].inFlightFence));
+
+			vk_check(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &frames[i].imageAvailableSemaphore));
+			vk_check(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &frames[i].renderFinishedSemaphore));
+		}
+	}
+
+	void Renderer::ResizeSwapchain()
+	{
+		vkDeviceWaitIdle(device);
+		DestroySwapchain();
+		CreateSwapchain(width, height);
+
+		resize_requested = false;
+	}
+
+	void Renderer::SetViewport(int width, int height) {
+		this->width = width;
+		this->height = height;
+		framebufferResized = true;
+	}
+
+	void Renderer::BeginFrame() {
+
+		if (resize_requested) {
+			ResizeSwapchain();
+		}
+
+
+
+		vk_check(vkWaitForFences(device, 1, &get_current_frame().inFlightFence, true, 1000000000));
+		vk_check(vkResetFences(device, 1, &get_current_frame().inFlightFence));
+
+		uint32_t swapchainImageIndex;
+		VkResult e = vkAcquireNextImageKHR(device, swapchain, 1000000000, get_current_frame().imageAvailableSemaphore, nullptr, &swapchainImageIndex);
+		if (e == VK_ERROR_OUT_OF_DATE_KHR) {
+			resize_requested = true;
+			return;
+		}
+
+
+
+		VkCommandBuffer cmd = get_current_frame().mainCommandBuffer;
+
+		// now that we are sure that the commands finished executing, we can safely
+		// reset the command buffer to begin recording again.
+		vk_check(vkResetCommandBuffer(cmd, 0));
+
+		//begin the command buffer recording. We will use this command buffer exactly once, so we want to let vulkan know that
+		VkCommandBufferBeginInfo cmdBeginInfo = vkinit::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+		//start the command buffer recording
+		vk_check(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
+
+
+		vkutil::transition_image(cmd, swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+
+		//make a clear-color from frame number. This will flash with a 120 frame period.
+		VkClearColorValue clearValue;
+		float flash = std::abs(std::sin(frameNumber / 120.f));
+		clearValue = { { 0.0f, 0.0f, flash, 1.0f } };
+
+		VkImageSubresourceRange clearRange = vkinit::image_subresource_range(VK_IMAGE_ASPECT_COLOR_BIT);
+
+		//clear image
+		vkCmdClearColorImage(cmd, swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, &clearValue, 1, &clearRange);
+
+		//make the swapchain image into presentable mode
+		vkutil::transition_image(cmd, swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+		//finalize the command buffer (we can no longer add commands, but it can now be executed)
+		vk_check(vkEndCommandBuffer(cmd));
+
+
+		VkCommandBufferSubmitInfo cmdinfo = vkinit::command_buffer_submit_info(cmd);
+
+		VkSemaphoreSubmitInfo waitInfo = vkinit::semaphore_submit_info(VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR, get_current_frame().imageAvailableSemaphore);
+		VkSemaphoreSubmitInfo signalInfo = vkinit::semaphore_submit_info(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT, get_current_frame().renderFinishedSemaphore);
+
+		VkSubmitInfo2 submit = vkinit::submit_info(&cmdinfo, &signalInfo, &waitInfo);
+
+		//submit command buffer to the queue and execute it.
+		// _renderFence will now block until the graphic commands finish execution
+		vk_check(vkQueueSubmit2(graphicsQueue, 1, &submit, get_current_frame().inFlightFence));
+
+		//prepare present
+		// this will put the image we just rendered to into the visible window.
+		// we want to wait on the _renderSemaphore for that, 
+		// as its necessary that drawing commands have finished before the image is displayed to the user
+		VkPresentInfoKHR presentInfo = {};
+		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		presentInfo.pNext = nullptr;
+		presentInfo.pSwapchains = &swapchain;
+		presentInfo.swapchainCount = 1;
+
+		presentInfo.pWaitSemaphores = &get_current_frame().renderFinishedSemaphore;
+		presentInfo.waitSemaphoreCount = 1;
+
+		presentInfo.pImageIndices = &swapchainImageIndex;
+
+		
+		VkResult presentResult = vkQueuePresentKHR(graphicsQueue, &presentInfo);
+		if (presentResult == VK_ERROR_OUT_OF_DATE_KHR) {
+			resize_requested = true;
+		}
+
+
+		frameNumber++;
+	}
+	
 }

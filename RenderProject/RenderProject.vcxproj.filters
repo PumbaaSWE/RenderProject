@@ -30,6 +30,12 @@
     <ClInclude Include="init_helper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="vk_init.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vk_images.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Window.cpp">

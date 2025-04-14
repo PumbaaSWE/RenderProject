@@ -97,6 +97,15 @@ namespace tde {
 
 	struct InstanceData
 	{
+		bool enableValidationLayers = false;
+		VkInstance instance = VK_NULL_HANDLE;
+		std::string app_name;
+		bool useDebugMessenger = false;
+		uint32_t api_version = VK_API_VERSION_1_0;
+		PFN_vkDebugUtilsMessengerCallbackEXT debug_callback = defaultDebugCallback;
+		VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;            //for debugging and validation layers
+		std::vector<const char*> extensions;
+		std::vector<const char*> validationLayers = defaultValidationLayers;
 	};
 
 	class InstanceBuilder {
@@ -187,6 +196,26 @@ namespace tde {
 		DeviceBuilder(PhysicalDeviceData physicalDevice);
 		VkDevice build();
 	};
+}
+
+
+namespace tde {
+	auto GetSupportedInstanceExtensions() {
+		uint32_t extensionCount = 0;
+		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+		std::vector<VkExtensionProperties> extensions(extensionCount);
+		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+		return extensions;
+	}
+
+	auto GetSupportedInstanceLayers() {
+		uint32_t layerCount;
+		vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+		std::vector<VkLayerProperties> availableLayers(layerCount);
+		vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+		return availableLayers;
+	}
 }
 
 #ifdef INIT_IMPLEMENTATION
@@ -337,6 +366,20 @@ namespace tde {
 		createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 		createInfo.pApplicationInfo = &appInfo;
 
+		//auto avalibleExtensions = GetSupportedInstanceExtensions();
+		//std::cout << "available extensions:" << std::endl;
+		//for (const auto& extension : avalibleExtensions) {
+		//	std::cout << '\t' << extension.extensionName << std::endl;
+		//}
+
+		//auto avalibleLayers = GetSupportedInstanceLayers();
+		//std::cout << "available layers:" << std::endl;
+		//for (const auto& layer : avalibleLayers) {
+		//	std::cout << '\t' << layer.layerName << std::endl;
+		//}
+
+
+
 		auto extensions = getRequiredExtensions();
 		if (enableValidationLayers) {
 			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -401,6 +444,7 @@ namespace tde {
 		return *this;
 	}
 	PhysicalDeviceData PhysicalDeviceSelector::select(){
+		physicalDevice.deviceExtensions = deviceExtensions;
 		pickPhysicalDevice();
 		return physicalDevice;
 	}
@@ -416,13 +460,20 @@ namespace tde {
 		std::vector<VkPhysicalDevice> devices(deviceCount);
 		vkEnumeratePhysicalDevices(physicalDevice.instance, &deviceCount, devices.data());
 
+		//VkPhysicalDeviceProperties props;
+
 		for (const auto& device : devices) {
+			
+			//vkGetPhysicalDeviceProperties(device, &props);
+			//printl("Device found ", props.deviceName);
 			if (isDeviceSuitable(device)) {
-				//printl("PDevices:", device);
 				physicalDevice.physicalDevice = device;
 				break;
 			}
 		}
+
+		//vkGetPhysicalDeviceProperties(physicalDevice.physicalDevice, &props);
+		//printl("Device selected ", props.deviceName);
 
 		if (physicalDevice.physicalDevice == VK_NULL_HANDLE) {
 			throw std::runtime_error("failed to find a suitable GPU!");
@@ -503,10 +554,35 @@ namespace tde {
 
 		createInfo.pEnabledFeatures = &deviceFeatures;
 
+
+		//for (size_t i = 0; i < physicalDevice.deviceExtensions.size(); i++)
+		//{
+		//	printl("Device name: ", physicalDevice.deviceExtensions[i]);
+		//}
+
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(physicalDevice.deviceExtensions.size());
 		createInfo.ppEnabledExtensionNames = physicalDevice.deviceExtensions.data();
 
 
+//here
+
+		VkPhysicalDeviceFeatures features = {};
+		VkPhysicalDeviceVulkan13Features features13 = {};
+		features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+		// set the desired features here:
+		features13.dynamicRendering = VK_TRUE;
+		features13.synchronization2 = VK_TRUE;
+
+		VkPhysicalDeviceFeatures2 features2 = {};
+		features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+		features2.pNext = &features13;
+		features2.features = features;
+
+		createInfo.pNext = &features2;
+		createInfo.pEnabledFeatures = NULL;
+//to here is to enable syncronization2
+
+		//this is from vulkan tutorial and I'm no sure how the vkbootstrapper handles this case
 		//if (enableValidationLayers) {
 		//	createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 		//	createInfo.ppEnabledLayerNames = validationLayers.data();
@@ -521,6 +597,10 @@ namespace tde {
 
 		vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
 		vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+
+		//printl("Success on device creation and queue getting");
+
+		return device;
 	}
 }
 

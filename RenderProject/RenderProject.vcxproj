@@ -139,6 +139,8 @@
     <ClInclude Include="init_helper.h" />
     <ClInclude Include="renderer.h" />
     <ClInclude Include="stuff.h" />
+    <ClInclude Include="vk_images.h" />
+    <ClInclude Include="vk_init.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
