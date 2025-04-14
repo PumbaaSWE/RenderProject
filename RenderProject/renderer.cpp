@@ -4,6 +4,14 @@
 
 namespace tde {
 
+	void vk_check(VkResult err, const char* msg = "Check error") {
+		if (err) {
+			std::cout << msg << " error code: " << err << std::endl;
+			abort();//throw?
+		}
+		
+	}
+
 	Renderer::Renderer()
 	{
 
@@ -62,7 +70,13 @@ namespace tde {
 
 		DeviceBuilder deviceBuilder{ physDevice };
 		device = deviceBuilder.build();
+		graphicsQueue = deviceBuilder.graphicsQueue;
+		graphicsQueueFamily = deviceBuilder.graphicsQueueFamily;
 
+		//
+		CreateSwapChain(width, height);
+
+		init_commands();
 	}
 
 	TdeResult Renderer::CreateSurfaceOnWindows(HWND hwnd, HINSTANCE hInstance) {
@@ -149,7 +163,7 @@ namespace tde {
 		createInfo.imageArrayLayers = 1;
 		createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-		QueueFamilyIndices indices = findQueueFamilies(physicalDevice); //we already found this!!
+		QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface); //we already found this!!
 		uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
 		//check if queues are different, then we need to deal with that
@@ -187,5 +201,41 @@ namespace tde {
 
 	}
 
-	void Renderer::DestroySwapchain(){}
+	void Renderer::DestroySwapchain(){
+		vkDestroySwapchainKHR(device, swapchain, nullptr);
+
+		// destroy swapchain resources
+		for (int i = 0; i < swapchainImageViews.size(); i++) {
+
+			vkDestroyImageView(device, swapchainImageViews[i], nullptr);
+		}
+	}
+
+
+	void Renderer::init_commands()
+	{
+		//create a command pool for commands submitted to the graphics queue.
+		//we also want the pool to allow for resetting of individual command buffers
+		VkCommandPoolCreateInfo commandPoolInfo = {};
+		commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		commandPoolInfo.pNext = nullptr;
+		commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		commandPoolInfo.queueFamilyIndex = graphicsQueueFamily;
+		vk_check(vkCreateCommandPool(device, &commandPoolInfo, nullptr, &commandPool));
+
+		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+
+
+			// allocate the default command buffer that we will use for rendering
+			VkCommandBufferAllocateInfo cmdAllocInfo = {};
+			cmdAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+			cmdAllocInfo.pNext = nullptr;
+			cmdAllocInfo.commandPool = commandPool;
+			cmdAllocInfo.commandBufferCount = 1;
+			cmdAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+			vk_check(vkAllocateCommandBuffers(device, &cmdAllocInfo, &frames[i].mainCommandBuffer));
+		}
+	}
+
 }

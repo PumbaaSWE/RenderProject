@@ -18,6 +18,7 @@ namespace tde {
 		std::vector<VkSurfaceFormatKHR> formats;
 		std::vector<VkPresentModeKHR> presentModes;
 	};
+	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
 	//---swapchain---
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -151,7 +152,6 @@ namespace tde {
 
 		void pickPhysicalDevice();
 		bool isDeviceSuitable(VkPhysicalDevice device);
-		QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 		bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 		
 
@@ -174,7 +174,7 @@ namespace tde {
 	};
 }
 
-//DeviceBuilder
+//DeviceBuilder declaration
 namespace tde {
 	class DeviceBuilder {
 	public:
@@ -182,12 +182,119 @@ namespace tde {
 		VkDevice device = VK_NULL_HANDLE;
 		VkQueue graphicsQueue = VK_NULL_HANDLE;  //where we put draw commands
 		VkQueue presentQueue = VK_NULL_HANDLE;
+		uint32_t graphicsQueueFamily = 0;
+		uint32_t presentQueueFamily = 0;
 		DeviceBuilder(PhysicalDeviceData physicalDevice);
 		VkDevice build();
 	};
 }
 
 #ifdef INIT_IMPLEMENTATION
+
+//Commons implementation
+namespace tde {
+
+	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
+		QueueFamilyIndices indices;
+
+		uint32_t queueFamilyCount = 0;
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+		std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+		int i = 0;
+		for (const auto& queueFamily : queueFamilies) {
+			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+				indices.graphicsFamily = i;
+			}
+
+			VkBool32 presentSupport = false;
+			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+
+			if (presentSupport) {
+				indices.presentFamily = i;
+			}
+
+			if (indices.isComplete()) {
+				break;
+			}
+
+			i++;
+		}
+
+		return indices;
+	}
+
+	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) {
+		SwapChainSupportDetails details;
+
+		//query basic surface capabilities
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+
+		//query supported surface formats
+		uint32_t formatCount;
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+
+		if (formatCount != 0) {
+			details.formats.resize(formatCount);
+			vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+		}
+
+		//query supported presentation modes
+		uint32_t presentModeCount;
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+
+		if (presentModeCount != 0) {
+			details.presentModes.resize(presentModeCount);
+			vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
+		}
+
+		return details;
+	}
+
+	//find the "optimal" settings for the swap chain
+	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
+		for (const auto& availableFormat : availableFormats) {
+			if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+				return availableFormat;
+			}
+		}
+		//do logic for next best thing but we just go with the first...
+		return availableFormats[0];
+	}
+
+
+	//find best present mode, fifo always availible bet tutorial likes Mailbox so we see if that exists 
+	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
+		for (const auto& availablePresentMode : availablePresentModes) {
+			if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+				return availablePresentMode;
+			}
+		}
+
+		return VK_PRESENT_MODE_FIFO_KHR;
+	}
+
+	//the desired size/resolution
+	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, uint32_t desired_width, uint32_t desired_height) {
+		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>().max()) {
+			return capabilities.currentExtent;
+		}
+		else {
+
+			VkExtent2D actualExtent = {
+				static_cast<uint32_t>(desired_width),
+				static_cast<uint32_t>(desired_height)
+			};
+
+			actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+			actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+
+			return actualExtent;
+		}
+	}
+}
 
 //InstanceBuilder implementation
 namespace tde {
@@ -272,79 +379,6 @@ namespace tde {
 }
 
 
-namespace tde {
-	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) {
-		SwapChainSupportDetails details;
-
-		//query basic surface capabilities
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
-
-		//query supported surface formats
-		uint32_t formatCount;
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
-
-		if (formatCount != 0) {
-			details.formats.resize(formatCount);
-			vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
-		}
-
-		//query supported presentation modes
-		uint32_t presentModeCount;
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
-
-		if (presentModeCount != 0) {
-			details.presentModes.resize(presentModeCount);
-			vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
-		}
-
-		return details;
-	}
-
-	//find the "optimal" settings for the swap chain
-	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
-		for (const auto& availableFormat : availableFormats) {
-			if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-				return availableFormat;
-			}
-		}
-		//do logic for next best thing but we just go with the first...
-		return availableFormats[0];
-	}
-
-
-	//find best present mode, fifo always availible bet tutorial likes Mailbox so we see if that exists 
-	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
-		for (const auto& availablePresentMode : availablePresentModes) {
-			if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
-				return availablePresentMode;
-			}
-		}
-
-		return VK_PRESENT_MODE_FIFO_KHR;
-	}
-
-	//the desired size/resolution
-	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, uint32_t desired_width, uint32_t desired_height) {
-		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>().max()) {
-			return capabilities.currentExtent;
-		}
-		else {
-			//int width, height;
-			//glfwGetFramebufferSize(window, &width, &height); // GLFW has two pixels and screen coords, vulkan only has pixels to some stuff
-
-			VkExtent2D actualExtent = {
-				static_cast<uint32_t>(desired_width),
-				static_cast<uint32_t>(desired_height)
-			};
-
-			actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-			actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
-
-			return actualExtent;
-		}
-	}
-}
-
 //DeviceSelector implementation
 namespace tde {
 	PhysicalDeviceSelector::PhysicalDeviceSelector(VkInstance instance, VkSurfaceKHR surface) {
@@ -356,13 +390,18 @@ namespace tde {
 		physicalDevice.api_version = VK_MAKE_API_VERSION(0, major, minor, 0);
 		return *this;
 	}
-	PhysicalDeviceSelector& PhysicalDeviceSelector::set_required_features_13(VkPhysicalDeviceVulkan13Features features13) {}
-	PhysicalDeviceSelector& PhysicalDeviceSelector::set_required_features_12(VkPhysicalDeviceVulkan12Features  features12){}
+	PhysicalDeviceSelector& PhysicalDeviceSelector::set_required_features_13(VkPhysicalDeviceVulkan13Features features13) {
+		return *this;
+	}
+	PhysicalDeviceSelector& PhysicalDeviceSelector::set_required_features_12(VkPhysicalDeviceVulkan12Features  features12){
+		return *this;
+	}
 	PhysicalDeviceSelector& PhysicalDeviceSelector::set_surface(VkSurfaceKHR surface){
 		physicalDevice.surface = surface;
 		return *this;
 	}
 	PhysicalDeviceData PhysicalDeviceSelector::select(){
+		pickPhysicalDevice();
 		return physicalDevice;
 	}
 
@@ -379,6 +418,7 @@ namespace tde {
 
 		for (const auto& device : devices) {
 			if (isDeviceSuitable(device)) {
+				//printl("PDevices:", device);
 				physicalDevice.physicalDevice = device;
 				break;
 			}
@@ -392,7 +432,7 @@ namespace tde {
 
 	bool PhysicalDeviceSelector::isDeviceSuitable(VkPhysicalDevice device) {
 
-		physicalDevice.queueFamilyIndices = findQueueFamilies(device);
+		physicalDevice.queueFamilyIndices = findQueueFamilies(device, physicalDevice.surface);
 
 		//make sure we have
 		bool extensionsSupported = checkDeviceExtensionSupport(device);
@@ -407,37 +447,7 @@ namespace tde {
 		return physicalDevice.queueFamilyIndices.isComplete() && extensionsSupported && swapChainAdequate;
 	}
 
-	QueueFamilyIndices PhysicalDeviceSelector::findQueueFamilies(VkPhysicalDevice device) {
-		QueueFamilyIndices indices;
 
-		uint32_t queueFamilyCount = 0;
-		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
-		std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-
-		int i = 0;
-		for (const auto& queueFamily : queueFamilies) {
-			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-				indices.graphicsFamily = i;
-			}
-
-			VkBool32 presentSupport = false;
-			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, physicalDevice.surface, &presentSupport);
-
-			if (presentSupport) {
-				indices.presentFamily = i;
-			}
-
-			if (indices.isComplete()) {
-				break;
-			}
-
-			i++;
-		}
-
-		return indices;
-	}
 
 	bool PhysicalDeviceSelector::checkDeviceExtensionSupport(VkPhysicalDevice device) {
 		uint32_t extensionCount;
@@ -465,10 +475,14 @@ namespace tde {
 	DeviceBuilder::DeviceBuilder(PhysicalDeviceData physicalDevice):physicalDevice(physicalDevice) {}
 
 	VkDevice DeviceBuilder::build() {
-		QueueFamilyIndices indices = physicalDevice.queueFamilyIndices;
+		//QueueFamilyIndices indices = physicalDevice.queueFamilyIndices;
+		QueueFamilyIndices indices = findQueueFamilies(physicalDevice.physicalDevice, physicalDevice.surface);
 
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 		std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+		graphicsQueueFamily = indices.graphicsFamily.value();
+		presentQueueFamily = indices.presentFamily.value();
+
 
 		float queuePriority = 1.0f;
 		for (uint32_t queueFamily : uniqueQueueFamilies) {

@@ -5,6 +5,16 @@
 
 namespace tde{
 	constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+
+    struct FrameData {
+
+        //VkCommandPool commandPool; //why is this here??
+        VkCommandBuffer mainCommandBuffer;
+    };
+
+
+
+
 	class Renderer
 	{
 #ifdef NDEBUG
@@ -25,6 +35,8 @@ namespace tde{
 		VkSurfaceKHR surface = VK_NULL_HANDLE;// Vulkan window surface
 
         VkQueue graphicsQueue = VK_NULL_HANDLE;  //where we put draw commands
+        uint32_t graphicsQueueFamily;
+
         VkQueue presentQueue = VK_NULL_HANDLE;
 
         VkExtent2D swapchainExtent;
@@ -34,7 +46,7 @@ namespace tde{
         VkFormat swapChainImageFormat = {};
         VkExtent2D swapChainExtent = {};
 
-        std::vector<VkImageView> swapChainImageViews;
+        std::vector<VkImageView> swapchainImageViews;
 
 
         VkDescriptorSetLayout descriptorSetLayout;
@@ -42,7 +54,7 @@ namespace tde{
         VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
         VkPipeline graphicsPipeline = VK_NULL_HANDLE;
 
-        std::vector<VkFramebuffer> swapChainFramebuffers;
+      //  std::vector<VkFramebuffer> swapChainFramebuffers;
         VkCommandPool commandPool;
 
         VkRenderPass renderPass = VK_NULL_HANDLE;
@@ -71,7 +83,9 @@ namespace tde{
         int currentFrame = 0;
         bool framebufferResized = false;
 
+        FrameData frames[MAX_FRAMES_IN_FLIGHT];
 
+        FrameData& get_current_frame() { return frames[currentFrame]; };
 
 		Renderer();
 		~Renderer();
