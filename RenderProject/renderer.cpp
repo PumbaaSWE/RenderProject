@@ -68,6 +68,7 @@ namespace tde {
 		VkPhysicalDeviceVulkan12Features features12{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
 		features12.bufferDeviceAddress = true;
 		features12.descriptorIndexing = true;
+		
 
 		PhysicalDeviceSelector selector{ instance, surface };
 		PhysicalDeviceData physDevice = selector
