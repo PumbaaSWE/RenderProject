@@ -106,7 +106,7 @@ namespace tde {
 	}
 	
 	void Renderer::InitPipelines() {
-		//InitDefaultPipeline();
+		InitDefaultPipeline();
 	}
 
 	void Renderer::InitDefaultPipeline() {
@@ -128,6 +128,12 @@ namespace tde {
 
 
 		VkPipelineLayoutCreateInfo pipeline_layout_info = vkinit::pipeline_layout_create_info();
+
+
+		//pipeline_layout_info.setLayoutCount = 1;
+		//pipeline_layout_info.pSetLayouts = dfgdg;
+
+
 		vk_check(vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr, &trianglePipelineLayout));
 
 
@@ -150,9 +156,13 @@ namespace tde {
 		//no depth testing
 		pipelineBuilder.disable_depthtest();
 
+		
+
 		//connect the image format we will draw into, from draw image
-		//pipelineBuilder.set_color_attachment_format(drawImage.imageFormat);
+		pipelineBuilder.set_color_attachment_format(swapchain.colorFormat);
 		pipelineBuilder.set_depth_format(VK_FORMAT_UNDEFINED);
+		
+		//pipelineBuilder.set_vertex_description();
 
 		//finally build the pipeline
 		trianglePipeline = pipelineBuilder.build_pipeline(device);
@@ -223,13 +233,7 @@ namespace tde {
 
 	void Renderer::DestroySwapchain(){
 		swapchain.Destroy();
-	//	vkDestroySwapchainKHR(device, swapchain, nullptr);
 
-	//	// destroy swapchain resources
-	//	for (int i = 0; i < swapchainImageViews.size(); i++) {
-
-	//		vkDestroyImageView(device, swapchainImageViews[i], nullptr);
-	//	}
 	}
 
 
@@ -238,75 +242,12 @@ namespace tde {
 
 		swapchain.SetContext(device, physicalDevice, instance, surface);
 		swapchain.Create(width, height);
-	//	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
-
-	//	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-	//	VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-	//	VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, width, height);
-
-	//	uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1; //at least one more than min to avoid waiting
-
-	//	//not more than maximum though (0 is no max exist)
-	//	if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
-	//		imageCount = swapChainSupport.capabilities.maxImageCount;
-	//	}
-
-	//	VkSwapchainCreateInfoKHR createInfo{};
-	//	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	//	createInfo.surface = surface;
-	//	
-	//	createInfo.minImageCount = imageCount;
-	//	createInfo.imageFormat = surfaceFormat.format;
-	//	createInfo.imageColorSpace = surfaceFormat.colorSpace;
-	//	createInfo.imageExtent = extent;
-	//	createInfo.imageArrayLayers = 1;
-	//	createInfo.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-
-	//	QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface); //we already found this!!
-	//	uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
-
-	//	//check if queues are different, then we need to deal with that
-	//	if (indices.graphicsFamily != indices.presentFamily) {
-	//		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-	//		createInfo.queueFamilyIndexCount = 2;
-	//		createInfo.pQueueFamilyIndices = queueFamilyIndices;
-	//	}
-	//	else {
-	//		createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	//		createInfo.queueFamilyIndexCount = 0; // Optional
-	//		createInfo.pQueueFamilyIndices = nullptr; // Optional
-	//	}
-
-	//	createInfo.preTransform = swapChainSupport.capabilities.currentTransform; //no transformation like flip or rotate 90
-
-	//	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR; //dont blend with other windows
-
-	//	createInfo.presentMode = presentMode;
-	//	createInfo.clipped = VK_TRUE;               //clip pixels outside view
-
-	//	createInfo.oldSwapchain = VK_NULL_HANDLE; //in case of invalidation of current swap chain
-
-	//	
-
-
-	//	if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapchain) != VK_SUCCESS) {
-	//		throw std::runtime_error("failed to create swap chain!");
-	//	}
-
-	//	vkGetSwapchainImagesKHR(device, swapchain, &imageCount, nullptr);
-	//	swapchainImages.resize(imageCount);
-	//	vkGetSwapchainImagesKHR(device, swapchain, &imageCount, swapchainImages.data());
-
-	//	//needed later
-	//	swapChainImageFormat = surfaceFormat.format;
-	//	swapChainExtent = extent;
 
 	}
 
 	void Renderer::ResizeSwapchain()
 	{
 		vkDeviceWaitIdle(device);
-
 		DestroySwapchain();
 		CreateSwapchain(width, height);
 		resize_requested = false;

@@ -92,6 +92,7 @@ namespace tde {
 		PipelineBuilder& set_multisampling_none();
 		PipelineBuilder& enable_blending_additive();
 		PipelineBuilder& enable_blending_alphablend();
+		PipelineBuilder& set_vertex_description(vkinit::VertexInputDescription description);
 
 	};
 
@@ -460,6 +461,7 @@ void tde::PipelineBuilder::clear()
 
 	renderInfo = { .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
 
+
 	shaderStages.clear();
 }
 
@@ -574,6 +576,21 @@ tde::PipelineBuilder& tde::PipelineBuilder::enable_blending_alphablend()
 	colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
 	colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
 	colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+	return *this;
+}
+
+tde::PipelineBuilder& tde::PipelineBuilder::set_vertex_description(vkinit::VertexInputDescription description)
+{
+	vertexInputInfo = vkinit::vertex_input_state_create_info();
+
+	vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(description.bindings.size());
+	vertexInputInfo.pVertexBindingDescriptions = description.bindings.data();
+
+	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(description.attributes.size());
+	vertexInputInfo.pVertexAttributeDescriptions = description.attributes.data();
+
+	vertexInputInfo.flags = description.flags;
+
 	return *this;
 }
 
