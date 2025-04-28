@@ -3,6 +3,8 @@
 
 #include "stuff.h"
 
+#include "Swapchain.h"
+
 namespace tde{
 	constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -43,14 +45,14 @@ namespace tde{
         VkQueue presentQueue = VK_NULL_HANDLE;
 
         VkExtent2D swapchainExtent;
-        VkSwapchainKHR swapchain = VK_NULL_HANDLE;
+        //VkSwapchainKHR swapchain = VK_NULL_HANDLE;
 
-        std::vector<VkImage> swapchainImages;
-        VkFormat swapChainImageFormat = {};
-        VkExtent2D swapChainExtent = {};
+        //std::vector<VkImage> swapchainImages;
+        //VkFormat swapChainImageFormat = {};
+        //VkExtent2D swapChainExtent = {};
 
-        std::vector<VkImageView> swapchainImageViews;
-
+        //std::vector<VkImageView> swapchainImageViews;
+        Swapchain swapchain{};
 
         VkDescriptorSetLayout descriptorSetLayout;
 
@@ -67,16 +69,15 @@ namespace tde{
         std::vector<VkDeviceMemory> uniformBuffersMemory;
         std::vector<void*> uniformBuffersMapped;
 
-
         VkDescriptorPool descriptorPool;
         std::vector<VkDescriptorSet> descriptorSets;
 
         std::vector<VkCommandBuffer> commandBuffers;
 
         //sync objects
-        std::vector<VkSemaphore> imageAvailableSemaphores;
-        std::vector<VkSemaphore> renderFinishedSemaphores;
-        std::vector<VkFence> inFlightFences;
+        //std::vector<VkSemaphore> imageAvailableSemaphores;
+        //std::vector<VkSemaphore> renderFinishedSemaphores;
+        //std::vector<VkFence> inFlightFences;
 
         //depth objects
         VkImage depthImage;
@@ -89,6 +90,12 @@ namespace tde{
         FrameData frames[MAX_FRAMES_IN_FLIGHT];
 
         FrameData& get_current_frame() { return frames[frameNumber % MAX_FRAMES_IN_FLIGHT]; };
+
+        VkPipelineLayout trianglePipelineLayout;
+        VkPipeline trianglePipeline;
+
+        DeletionQueue mainDeletionQueue;
+
 
 		Renderer();
 		~Renderer();
@@ -108,6 +115,8 @@ namespace tde{
         void DestroySwapchain();
 		void InitCommands();
 		void InitSyncStructures();
+        void InitPipelines();
+        void InitDefaultPipeline();
 		void Destroy();
 
 	};

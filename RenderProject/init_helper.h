@@ -22,6 +22,10 @@ namespace tde {
 	//---swapchain---
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+
+	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
+	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, uint32_t desired_width, uint32_t desired_height);
 }
 
 //InstanceBuilder declaration
@@ -37,6 +41,15 @@ namespace tde {
 		VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;            //for debugging and validation layers
 	};
 
+	std::vector<const char*> getRequiredExtensions();
+	static VKAPI_ATTR VkBool32 VKAPI_CALL defaultDebugCallback(
+		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+		VkDebugUtilsMessageTypeFlagsEXT messageType,
+		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+		void* pUserData);
+
+	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 
 	//debugging support
 	const std::vector<const char*> defaultValidationLayers = {
@@ -44,55 +57,7 @@ namespace tde {
 	};
 
 
-	///this is a bit to hardcoded for my taste, the InstanceBuilder should maybe have a "default" or it should be added to it 
-	std::vector<const char*> getRequiredExtensions() {
 
-		std::vector<const char*> extensions{
-			VK_KHR_SURFACE_EXTENSION_NAME,
-		};
-
-		//if windows
-		extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-
-		return extensions;
-	}
-
-	static VKAPI_ATTR VkBool32 VKAPI_CALL defaultDebugCallback(
-		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-		VkDebugUtilsMessageTypeFlagsEXT messageType,
-		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-		void* pUserData) {
-
-		std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-
-		return VK_FALSE;
-	}
-	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
-		createInfo = {};
-		createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-		createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-		createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-		//createInfo.pfnUserCallback = defaultDebugCallback;
-	}
-
-
-	//extentions methods for debugging
-	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
-		auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-		if (func != nullptr) {
-			return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-		}
-		else {
-			return VK_ERROR_EXTENSION_NOT_PRESENT;
-		}
-	}
-
-	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
-		auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-		if (func != nullptr) {
-			func(instance, debugMessenger, pAllocator);
-		}
-	}
 
 
 	struct InstanceData
@@ -200,6 +165,13 @@ namespace tde {
 
 
 namespace tde {
+	auto GetSupportedInstanceExtensions();
+
+	auto GetSupportedInstanceLayers();
+}
+
+#ifdef INIT_IMPLEMENTATION
+namespace tde {
 	auto GetSupportedInstanceExtensions() {
 		uint32_t extensionCount = 0;
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
@@ -218,7 +190,58 @@ namespace tde {
 	}
 }
 
-#ifdef INIT_IMPLEMENTATION
+
+namespace tde {
+	///this is a bit to hardcoded for my taste, the InstanceBuilder should maybe have a "default" or it should be added to it 
+	std::vector<const char*> getRequiredExtensions() {
+
+		std::vector<const char*> extensions{
+			VK_KHR_SURFACE_EXTENSION_NAME,
+		};
+
+		//if windows
+		extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+
+		return extensions;
+	}
+
+	static VKAPI_ATTR VkBool32 VKAPI_CALL defaultDebugCallback(
+		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+		VkDebugUtilsMessageTypeFlagsEXT messageType,
+		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+		void* pUserData) {
+
+		std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+
+		return VK_FALSE;
+	}
+	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
+		createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+		createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+		createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+		//createInfo.pfnUserCallback = defaultDebugCallback;
+	}
+
+
+	//extentions methods for debugging
+	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
+		auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+		if (func != nullptr) {
+			return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+		}
+		else {
+			return VK_ERROR_EXTENSION_NOT_PRESENT;
+		}
+	}
+
+	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
+		auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+		if (func != nullptr) {
+			func(instance, debugMessenger, pAllocator);
+		}
+	}
+}
 
 //Commons implementation
 namespace tde {

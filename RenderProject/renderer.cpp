@@ -1,11 +1,6 @@
 #include "renderer.h"
-#define INIT_IMPLEMENTATION
 #include "init_helper.h"
-
-#define VK_INIT_IMPLEMENTATION
-//#include "vk_init.h"
-
-#define VK_IMAGES_IMPLEMENTATION
+#include "vk_init.h"
 #include "vk_images.h"
 
 //this spart below should be copied with implementation guard once we get to it
@@ -19,6 +14,9 @@ namespace tde {
 		}
 		
 	}
+
+
+
 
 	Renderer::Renderer()
 	{
@@ -89,6 +87,8 @@ namespace tde {
 		InitCommands();
 
 		InitSyncStructures();
+
+		InitPipelines();
 	}
 
 	void Renderer::CreateSurfaceOnWindows(HWND hwnd, HINSTANCE hInstance) {
@@ -104,6 +104,70 @@ namespace tde {
 		}
 
 	}
+	
+	void Renderer::InitPipelines() {
+		//InitDefaultPipeline();
+	}
+
+	void Renderer::InitDefaultPipeline() {
+		VkShaderModule triangleFragShader;
+		if (!vkutil::load_shader_module("shaders/frag.spv", device, &triangleFragShader)) {
+			printl("Error when building the triangle fragment shader module");
+		}
+		else {
+			printl("Triangle fragment shader succesfully loaded");
+		}
+
+		VkShaderModule triangleVertexShader;
+		if (!vkutil::load_shader_module("shaders/vert.spv", device, &triangleVertexShader)) {
+			printl("Error when building the triangle vertex shader module");
+		}
+		else {
+			printl("Triangle vertex shader succesfully loaded");
+		}
+
+
+		VkPipelineLayoutCreateInfo pipeline_layout_info = vkinit::pipeline_layout_create_info();
+		vk_check(vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr, &trianglePipelineLayout));
+
+
+		PipelineBuilder pipelineBuilder;
+
+		//use the triangle layout we created
+		pipelineBuilder.pipelineLayout = trianglePipelineLayout;
+		//connecting the vertex and pixel shaders to the pipeline
+		pipelineBuilder.set_shaders(triangleVertexShader, triangleFragShader);
+		//it will draw triangles
+		pipelineBuilder.set_input_topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+		//filled triangles
+		pipelineBuilder.set_polygon_mode(VK_POLYGON_MODE_FILL);
+		//no backface culling
+		pipelineBuilder.set_cull_mode(VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
+		//no multisampling
+		pipelineBuilder.set_multisampling_none();
+		//no blending
+		pipelineBuilder.disable_blending();
+		//no depth testing
+		pipelineBuilder.disable_depthtest();
+
+		//connect the image format we will draw into, from draw image
+		//pipelineBuilder.set_color_attachment_format(drawImage.imageFormat);
+		pipelineBuilder.set_depth_format(VK_FORMAT_UNDEFINED);
+
+		//finally build the pipeline
+		trianglePipeline = pipelineBuilder.build_pipeline(device);
+
+		//clean structures
+		vkDestroyShaderModule(device, triangleFragShader, nullptr);
+		vkDestroyShaderModule(device, triangleVertexShader, nullptr);
+
+		mainDeletionQueue.push_function([&]() {
+			vkDestroyPipelineLayout(device, trianglePipelineLayout, nullptr);
+			vkDestroyPipeline(device, trianglePipeline, nullptr);
+			});
+	}
+
+	//vk utils?
 
 	void Renderer::Destroy() {
 
@@ -124,6 +188,8 @@ namespace tde {
 
 		//vkDestroyBuffer(device, indexBuffer, nullptr);
 		//vkFreeMemory(device, indexBufferMemory, nullptr);
+
+		mainDeletionQueue.flush();
 
 		DestroySwapchain();
 
@@ -156,83 +222,95 @@ namespace tde {
 	}
 
 	void Renderer::DestroySwapchain(){
-		vkDestroySwapchainKHR(device, swapchain, nullptr);
+		swapchain.Destroy();
+	//	vkDestroySwapchainKHR(device, swapchain, nullptr);
 
-		// destroy swapchain resources
-		for (int i = 0; i < swapchainImageViews.size(); i++) {
+	//	// destroy swapchain resources
+	//	for (int i = 0; i < swapchainImageViews.size(); i++) {
 
-			vkDestroyImageView(device, swapchainImageViews[i], nullptr);
-		}
+	//		vkDestroyImageView(device, swapchainImageViews[i], nullptr);
+	//	}
 	}
 
 
-	//TODO Use a builder to shrink it a bit
+	////TODO Use a builder to shrink it a bit
 	void Renderer::CreateSwapchain(uint32_t width, uint32_t height) {
-		SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
 
-		VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-		VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-		VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, width, height);
+		swapchain.SetContext(device, physicalDevice, instance, surface);
+		swapchain.Create(width, height);
+	//	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
 
-		uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1; //at least one more than min to avoid waiting
+	//	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+	//	VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
+	//	VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, width, height);
 
-		//not more than maximum though (0 is no max exist)
-		if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
-			imageCount = swapChainSupport.capabilities.maxImageCount;
-		}
+	//	uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1; //at least one more than min to avoid waiting
 
-		VkSwapchainCreateInfoKHR createInfo{};
-		createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-		createInfo.surface = surface;
-		
-		createInfo.minImageCount = imageCount;
-		createInfo.imageFormat = surfaceFormat.format;
-		createInfo.imageColorSpace = surfaceFormat.colorSpace;
-		createInfo.imageExtent = extent;
-		createInfo.imageArrayLayers = 1;
-		createInfo.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	//	//not more than maximum though (0 is no max exist)
+	//	if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
+	//		imageCount = swapChainSupport.capabilities.maxImageCount;
+	//	}
 
-		QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface); //we already found this!!
-		uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+	//	VkSwapchainCreateInfoKHR createInfo{};
+	//	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	//	createInfo.surface = surface;
+	//	
+	//	createInfo.minImageCount = imageCount;
+	//	createInfo.imageFormat = surfaceFormat.format;
+	//	createInfo.imageColorSpace = surfaceFormat.colorSpace;
+	//	createInfo.imageExtent = extent;
+	//	createInfo.imageArrayLayers = 1;
+	//	createInfo.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
-		//check if queues are different, then we need to deal with that
-		if (indices.graphicsFamily != indices.presentFamily) {
-			createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-			createInfo.queueFamilyIndexCount = 2;
-			createInfo.pQueueFamilyIndices = queueFamilyIndices;
-		}
-		else {
-			createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-			createInfo.queueFamilyIndexCount = 0; // Optional
-			createInfo.pQueueFamilyIndices = nullptr; // Optional
-		}
+	//	QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface); //we already found this!!
+	//	uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
-		createInfo.preTransform = swapChainSupport.capabilities.currentTransform; //no transformation like flip or rotate 90
+	//	//check if queues are different, then we need to deal with that
+	//	if (indices.graphicsFamily != indices.presentFamily) {
+	//		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+	//		createInfo.queueFamilyIndexCount = 2;
+	//		createInfo.pQueueFamilyIndices = queueFamilyIndices;
+	//	}
+	//	else {
+	//		createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	//		createInfo.queueFamilyIndexCount = 0; // Optional
+	//		createInfo.pQueueFamilyIndices = nullptr; // Optional
+	//	}
 
-		createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR; //dont blend with other windows
+	//	createInfo.preTransform = swapChainSupport.capabilities.currentTransform; //no transformation like flip or rotate 90
 
-		createInfo.presentMode = presentMode;
-		createInfo.clipped = VK_TRUE;               //clip pixels outside view
+	//	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR; //dont blend with other windows
 
-		createInfo.oldSwapchain = VK_NULL_HANDLE; //in case of invalidation of current swap chain
+	//	createInfo.presentMode = presentMode;
+	//	createInfo.clipped = VK_TRUE;               //clip pixels outside view
 
-		
+	//	createInfo.oldSwapchain = VK_NULL_HANDLE; //in case of invalidation of current swap chain
+
+	//	
 
 
-		if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapchain) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create swap chain!");
-		}
+	//	if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapchain) != VK_SUCCESS) {
+	//		throw std::runtime_error("failed to create swap chain!");
+	//	}
 
-		vkGetSwapchainImagesKHR(device, swapchain, &imageCount, nullptr);
-		swapchainImages.resize(imageCount);
-		vkGetSwapchainImagesKHR(device, swapchain, &imageCount, swapchainImages.data());
+	//	vkGetSwapchainImagesKHR(device, swapchain, &imageCount, nullptr);
+	//	swapchainImages.resize(imageCount);
+	//	vkGetSwapchainImagesKHR(device, swapchain, &imageCount, swapchainImages.data());
 
-		//needed later
-		swapChainImageFormat = surfaceFormat.format;
-		swapChainExtent = extent;
+	//	//needed later
+	//	swapChainImageFormat = surfaceFormat.format;
+	//	swapChainExtent = extent;
 
 	}
 
+	void Renderer::ResizeSwapchain()
+	{
+		vkDeviceWaitIdle(device);
+
+		DestroySwapchain();
+		CreateSwapchain(width, height);
+		resize_requested = false;
+	}
 
 	void Renderer::InitCommands()
 	{
@@ -267,14 +345,6 @@ namespace tde {
 		}
 	}
 
-	void Renderer::ResizeSwapchain()
-	{
-		vkDeviceWaitIdle(device);
-		DestroySwapchain();
-		CreateSwapchain(width, height);
-
-		resize_requested = false;
-	}
 
 	void Renderer::SetViewport(int width, int height) {
 		this->width = width;
@@ -294,7 +364,7 @@ namespace tde {
 		vk_check(vkResetFences(device, 1, &get_current_frame().inFlightFence));
 
 		uint32_t swapchainImageIndex;
-		VkResult e = vkAcquireNextImageKHR(device, swapchain, 1000000000, get_current_frame().imageAvailableSemaphore, nullptr, &swapchainImageIndex);
+		VkResult e = swapchain.AcquireNextImage(get_current_frame().imageAvailableSemaphore, swapchainImageIndex);// vkAcquireNextImageKHR(device, swapchain, 1000000000, get_current_frame().imageAvailableSemaphore, nullptr, &swapchainImageIndex);
 		if (e == VK_ERROR_OUT_OF_DATE_KHR) {
 			resize_requested = true;
 			return;
@@ -313,9 +383,9 @@ namespace tde {
 
 		//start the command buffer recording
 		vk_check(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
+		
 
-
-		vkutil::transition_image(cmd, swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+		vkutil::transition_image(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 
 		//make a clear-color from frame number. This will flash with a 120 frame period.
 		VkClearColorValue clearValue;
@@ -325,10 +395,10 @@ namespace tde {
 		VkImageSubresourceRange clearRange = vkinit::image_subresource_range(VK_IMAGE_ASPECT_COLOR_BIT);
 
 		//clear image
-		vkCmdClearColorImage(cmd, swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, &clearValue, 1, &clearRange);
+		vkCmdClearColorImage(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, &clearValue, 1, &clearRange);
 
 		//make the swapchain image into presentable mode
-		vkutil::transition_image(cmd, swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+		vkutil::transition_image(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
 		//finalize the command buffer (we can no longer add commands, but it can now be executed)
 		vk_check(vkEndCommandBuffer(cmd));
@@ -349,23 +419,22 @@ namespace tde {
 		// this will put the image we just rendered to into the visible window.
 		// we want to wait on the _renderSemaphore for that, 
 		// as its necessary that drawing commands have finished before the image is displayed to the user
-		VkPresentInfoKHR presentInfo = {};
-		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-		presentInfo.pNext = nullptr;
-		presentInfo.pSwapchains = &swapchain;
-		presentInfo.swapchainCount = 1;
+		//VkPresentInfoKHR presentInfo = {};
+		//presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		//presentInfo.pNext = nullptr;
+		//presentInfo.pSwapchains = &swapchain;
+		//presentInfo.swapchainCount = 1;
 
-		presentInfo.pWaitSemaphores = &get_current_frame().renderFinishedSemaphore;
-		presentInfo.waitSemaphoreCount = 1;
+		//presentInfo.pWaitSemaphores = &get_current_frame().renderFinishedSemaphore;
+		//presentInfo.waitSemaphoreCount = 1;
 
-		presentInfo.pImageIndices = &swapchainImageIndex;
+		//presentInfo.pImageIndices = &swapchainImageIndex;
 
-		
-		VkResult presentResult = vkQueuePresentKHR(graphicsQueue, &presentInfo);
+		//
+		VkResult presentResult = swapchain.QueuePresent(graphicsQueue, swapchainImageIndex, get_current_frame().renderFinishedSemaphore);  //vkQueuePresentKHR(graphicsQueue, &presentInfo);
 		if (presentResult == VK_ERROR_OUT_OF_DATE_KHR) {
 			resize_requested = true;
 		}
-
 
 		frameNumber++;
 	}

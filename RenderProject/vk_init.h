@@ -74,21 +74,25 @@ namespace tde {
 		VkPipelineRenderingCreateInfo renderInfo;
 		VkFormat colorAttachmentFormat;
 
-		PipelineBuilder() { clear(); }
+		PipelineBuilder();// { clear(); }
 
-		VkPipeline build_pipeline(VkDevice device, VkRenderPass pass);
+		VkPipeline build_pipeline(VkDevice device);
 
 		void clear();
 
 		PipelineBuilder& set_pipeline_layout(VkPipelineLayout layout);
 		PipelineBuilder& set_shaders(VkShaderModule vertexShader, VkShaderModule fragmentShader);
 		PipelineBuilder& set_polygon_mode(VkPolygonMode mode, float lineWidth = 1.0f);
+		PipelineBuilder& set_input_topology(VkPrimitiveTopology topology);
 		PipelineBuilder& set_cull_mode(VkCullModeFlags cullMode, VkFrontFace frontFace);
 		PipelineBuilder& set_color_attachment_format(VkFormat format);
 		PipelineBuilder& set_depth_format(VkFormat format);
 		PipelineBuilder& disable_depthtest();
 		PipelineBuilder& disable_blending();
 		PipelineBuilder& set_multisampling_none();
+		PipelineBuilder& enable_blending_additive();
+		PipelineBuilder& enable_blending_alphablend();
+
 	};
 
 }
@@ -366,7 +370,12 @@ VkPipelineDepthStencilStateCreateInfo depth_stencil_create_info(bool bDepthTest,
 
 #pragma region PipelineBuilder_Impl
 
-VkPipeline tde::PipelineBuilder::build_pipeline(VkDevice device, VkRenderPass pass) {
+
+tde::PipelineBuilder::PipelineBuilder() {
+	clear();
+}
+
+VkPipeline tde::PipelineBuilder::build_pipeline(VkDevice device) {
 	VkPipelineViewportStateCreateInfo viewportState = {};
 	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 	viewportState.pNext = nullptr;
@@ -414,7 +423,7 @@ VkPipeline tde::PipelineBuilder::build_pipeline(VkDevice device, VkRenderPass pa
 	pipelineInfo.pMultisampleState = &multisampling;
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.layout = pipelineLayout;
-	pipelineInfo.renderPass = pass;
+	pipelineInfo.renderPass = VK_NULL_HANDLE;
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 	pipelineInfo.pDepthStencilState = &depthStencil;
@@ -466,6 +475,13 @@ tde::PipelineBuilder& tde::PipelineBuilder::set_shaders(VkShaderModule vertexSha
 	shaderStages.clear();
 	shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_VERTEX_BIT, vertexShader));
 	shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_FRAGMENT_BIT, fragmentShader));
+	return *this;
+}
+
+
+tde::PipelineBuilder& tde::PipelineBuilder::set_input_topology(VkPrimitiveTopology topology) {
+	inputAssembly.topology = topology;
+	inputAssembly.primitiveRestartEnable = VK_FALSE;
 	return *this;
 }
 
@@ -534,6 +550,33 @@ tde::PipelineBuilder& tde::PipelineBuilder::disable_blending()
 	colorBlendAttachment.blendEnable = VK_FALSE;
 	return *this;
 }
+
+tde::PipelineBuilder& tde::PipelineBuilder::enable_blending_additive()
+{
+	colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	colorBlendAttachment.blendEnable = VK_TRUE;
+	colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+	colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
+	colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+	colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+	colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+	colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+	return *this;
+}
+
+tde::PipelineBuilder& tde::PipelineBuilder::enable_blending_alphablend()
+{
+	colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	colorBlendAttachment.blendEnable = VK_TRUE;
+	colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+	colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+	colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+	colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+	colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+	colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+	return *this;
+}
+
 
 
 #pragma endregion PipelineBuilder implementation

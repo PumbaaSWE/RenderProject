@@ -137,19 +137,27 @@
   <ItemGroup>
     <ClInclude Include="application.h" />
     <ClInclude Include="init_helper.h" />
+    <ClInclude Include="obj_loader.h" />
     <ClInclude Include="renderer.h" />
     <ClInclude Include="stuff.h" />
+    <ClInclude Include="Swapchain.h" />
     <ClInclude Include="vk_images.h" />
     <ClInclude Include="vk_init.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="application.cpp" />
+    <ClCompile Include="init_helper.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="renderer.cpp" />
+    <ClCompile Include="Swapchain.cpp" />
+    <ClCompile Include="vk_images.cpp" />
+    <ClCompile Include="vk_init.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\WindowApp\WindowApp\shaders\shader.frag" />
+    <None Include="..\..\WindowApp\WindowApp\shaders\shader.vert" />
     <None Include="README.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
