@@ -4,8 +4,27 @@
 #include "stuff.h"
 
 #include "Swapchain.h"
+#include "vk_init.h"
+#include "Descriptors.h"
 
 namespace tde{
+
+
+
+    struct Vertex {
+        vec3_t pos;
+        vec3_t normal;
+
+        vkinit::VertexInputDescription GetVertexInputDescription();
+    };
+
+    struct UniformBufferObject {
+        mat4_t model;
+        mat4_t view;
+        mat4_t proj;
+    };
+
+
 	constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
     struct FrameData {
@@ -44,17 +63,20 @@ namespace tde{
 
         VkQueue presentQueue = VK_NULL_HANDLE;
 
-        VkExtent2D swapchainExtent;
+        VkExtent2D swapchainExtent{};
         //VkSwapchainKHR swapchain = VK_NULL_HANDLE;
 
         //std::vector<VkImage> swapchainImages;
         //VkFormat swapChainImageFormat = {};
         //VkExtent2D swapChainExtent = {};
 
+        //Device* pDevice = nullptr;
+
         //std::vector<VkImageView> swapchainImageViews;
         Swapchain swapchain{};
 
-        VkDescriptorSetLayout descriptorSetLayout;
+
+
 
         VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
         VkPipeline graphicsPipeline = VK_NULL_HANDLE;
@@ -62,17 +84,28 @@ namespace tde{
       //  std::vector<VkFramebuffer> swapChainFramebuffers;
         VkCommandPool commandPool = VK_NULL_HANDLE;
 
+        VkFence imFence;
+        VkCommandBuffer imCommandBuffer;
+
+
         VkRenderPass renderPass = VK_NULL_HANDLE;
 
         //Unifor Buffer Objects, currently not in use
-        std::vector<VkBuffer> uniformBuffers;
-        std::vector<VkDeviceMemory> uniformBuffersMemory;
-        std::vector<void*> uniformBuffersMapped;
+        std::vector<VkBuffer> uniformBuffers{};
+        std::vector<VkDeviceMemory> uniformBuffersMemory{};
+        std::vector<void*> uniformBuffersMapped{};
 
-        VkDescriptorPool descriptorPool;
-        std::vector<VkDescriptorSet> descriptorSets;
 
-        std::vector<VkCommandBuffer> commandBuffers;
+        DescriptorAllocator globalDescriptorAllocator;
+        VkDescriptorSetLayout descriptorSetLayout{};
+
+        //VkDescriptorSet _drawImageDescriptors;
+        //VkDescriptorSetLayout _drawImageDescriptorLayout;
+
+        VkDescriptorPool descriptorPool{};
+        std::vector<VkDescriptorSet> descriptorSets{};
+
+        std::vector<VkCommandBuffer> commandBuffers{};
 
         //sync objects
         //std::vector<VkSemaphore> imageAvailableSemaphores;
@@ -80,9 +113,9 @@ namespace tde{
         //std::vector<VkFence> inFlightFences;
 
         //depth objects
-        VkImage depthImage;
-        VkDeviceMemory depthImageMemory;
-        VkImageView depthImageView;
+        VkImage depthImage{};
+        VkDeviceMemory depthImageMemory{};
+        VkImageView depthImageView{};
 
         int currentFrame = 0;
         bool framebufferResized = false;
@@ -91,10 +124,10 @@ namespace tde{
 
         FrameData& get_current_frame() { return frames[frameNumber % MAX_FRAMES_IN_FLIGHT]; };
 
-        VkPipelineLayout trianglePipelineLayout;
-        VkPipeline trianglePipeline;
+        VkPipelineLayout trianglePipelineLayout{};
+        VkPipeline trianglePipeline{};
 
-        DeletionQueue mainDeletionQueue;
+        DeletionQueue mainDeletionQueue{};
 
 
 		Renderer();
@@ -106,6 +139,8 @@ namespace tde{
 
         void SetViewport(int width, int height);
 
+        VkCommandBuffer& GetCommandBuffer();
+
 	private:
         bool resize_requested = false;
 		void Init(int width, int height);
@@ -115,10 +150,24 @@ namespace tde{
         void DestroySwapchain();
 		void InitCommands();
 		void InitSyncStructures();
+        void CreateUniformBuffers();
+		void InitDescriptors();
         void InitPipelines();
         void InitDefaultPipeline();
 		void Destroy();
 
+
+
+    public:
+
+        uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+        void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+        void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkQueue queue);
+        VkCommandBuffer  BeginSingleTimeCommands();
+        void EndSingleTimeCommands(VkCommandBuffer commandBuffer, VkQueue queue);
+        void CreateVertexBuffer(std::vector<Vertex>& vertices, VkBuffer& vertexBuffer, VkDeviceMemory& vertexBufferMemory);
+        void CreateIndexBuffer(std::vector<uint16_t>& indices, VkBuffer& indexBuffer, VkDeviceMemory& indexBufferMemory);
+        void ImmediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function);
 	};
 
 

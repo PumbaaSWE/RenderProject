@@ -136,7 +136,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="application.h" />
+    <ClInclude Include="Buffer.h" />
+    <ClInclude Include="Descriptors.h" />
+    <ClInclude Include="Device.h" />
     <ClInclude Include="init_helper.h" />
+    <ClInclude Include="Model.h" />
     <ClInclude Include="obj_loader.h" />
     <ClInclude Include="renderer.h" />
     <ClInclude Include="stuff.h" />
@@ -147,8 +151,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="application.cpp" />
+    <ClCompile Include="Buffer.cpp" />
+    <ClCompile Include="Descriptors.cpp" />
+    <ClCompile Include="Device.cpp" />
     <ClCompile Include="init_helper.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Model.cpp" />
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="Swapchain.cpp" />
     <ClCompile Include="vk_images.cpp" />

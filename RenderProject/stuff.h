@@ -12,6 +12,8 @@
 #include <functional>
 #include <deque>
 #include <cassert>
+#include <span>
+#include <array>
 
 
 
@@ -37,6 +39,26 @@
 #define DEBUGPRINTL(x) ((void)0);
 #endif
 
+
+#define VK_CHECK(x)                                                     \
+    do {                                                                \
+        VkResult err = x;                                               \
+        if (err) {                                                      \
+             std::cout << "line: " << __LINE__ << " file: " << __FILE__ << " func: " << __func__ << "msg: " << err << std::endl;\
+            abort();                                                    \
+        }                                                               \
+    } while (0)
+
+#define USING_GLM
+
+#ifdef USING_GLM
+#include <glm\glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+using mat4_t = glm::mat4;
+using vec3_t = glm::vec3;
+#endif // USING_GLM
+
 template<class ...Args>
 void printl(Args&&... args) {
 	(std::cout << ... << args) << '\n';
@@ -44,6 +66,7 @@ void printl(Args&&... args) {
 
 namespace tde {
 	enum TdeResult { Success, Fail };
+
 }
 
 

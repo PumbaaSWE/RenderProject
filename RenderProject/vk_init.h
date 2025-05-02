@@ -1,10 +1,10 @@
 #pragma once
 
-#include "stuff.h"
 
 #ifndef vk_init
 #define vk_init
 
+#include "stuff.h"
 //command pool
 namespace vkinit {
 	VkCommandPoolCreateInfo command_pool_create_info(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags = 0);
