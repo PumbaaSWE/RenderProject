@@ -142,6 +142,7 @@
     <ClInclude Include="init_helper.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="obj_loader.h" />
+    <ClInclude Include="Pipeline.h" />
     <ClInclude Include="renderer.h" />
     <ClInclude Include="stuff.h" />
     <ClInclude Include="Swapchain.h" />
@@ -157,6 +158,7 @@
     <ClCompile Include="init_helper.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Model.cpp" />
+    <ClCompile Include="Pipeline.cpp" />
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="Swapchain.cpp" />
     <ClCompile Include="vk_images.cpp" />

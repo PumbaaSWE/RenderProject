@@ -15,7 +15,7 @@ namespace tde{
         vec3_t pos;
         vec3_t normal;
 
-        vkinit::VertexInputDescription GetVertexInputDescription();
+        static vkinit::VertexInputDescription GetVertexInputDescription();
     };
 
     struct UniformBufferObject {

@@ -2,11 +2,16 @@
 #include "init_helper.h"
 #include "vk_init.h"
 #include "vk_images.h"
+#include "Pipeline.h"
+#include "Model.h"
 
 //this spart below should be copied with implementation guard once we get to it
 
+
+
 namespace tde {
 
+	Model plane;
 	inline void vk_check(VkResult err, const char* msg = "Default") {
 		if (err) {
 			std::cout << msg << " error code: " << err << std::endl;
@@ -23,6 +28,10 @@ namespace tde {
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 		attributeDescriptions.resize(2);
 		//vec3
+
+		
+
+
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
 		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
@@ -33,7 +42,10 @@ namespace tde {
 		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 		attributeDescriptions[1].offset = offsetof(Vertex, normal);
 
-		return vkinit::VertexInputDescription{ {bindingDescription} ,attributeDescriptions, 0 };
+		vkinit::VertexInputDescription desc{};
+		desc.bindings.push_back(bindingDescription);
+		desc.attributes = attributeDescriptions;
+		return desc;
 	}
 
 
@@ -85,7 +97,7 @@ namespace tde {
 		VkPhysicalDeviceVulkan12Features features12{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
 		features12.bufferDeviceAddress = true;
 		features12.descriptorIndexing = true;
-		
+
 
 		PhysicalDeviceSelector selector{ instance, surface };
 		PhysicalDeviceData physDevice = selector
@@ -100,6 +112,16 @@ namespace tde {
 		graphicsQueue = deviceBuilder.graphicsQueue;
 		graphicsQueueFamily = deviceBuilder.graphicsQueueFamily;
 
+
+
+		//VkFormatProperties2 props{ VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2 };
+		//vkGetPhysicalDeviceFormatProperties2(physicalDevice, VK_FORMAT_R32G32B32_SFLOAT, &props);
+		//printl("bufferFeatures: ", (int)(props.formatProperties.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT));
+
+		//printl("break");
+
+
+
 		//
 		CreateSwapchain(width, height);
 
@@ -112,6 +134,26 @@ namespace tde {
 		InitDescriptors();
 
 		InitPipelines();
+
+
+
+
+		const int s = 50;
+		std::vector<tde::Vertex> vertices = {
+		{{ s, 0, -s	}, {1.0f, 0.0f, 0.5f}},
+		{{ s, 0,  s	}, {0.0f, 0.0f, 1.0f}},
+		{{-s, 0,  s	}, {0.0f, 1.0f, 0.0f}},
+		{{-s, 0, -s	}, {0.1f, 1.0f, 0.0f}}
+		};
+
+		std::vector<uint16_t> indices = {
+			0, 2, 1, 2, 0, 3
+		};
+		plane = Model(this, vertices, indices);
+
+		mainDeletionQueue.push_function([&]() {plane.Destroy(); });
+
+
 	}
 
 	void Renderer::CreateSurfaceOnWindows(HWND hwnd, HINSTANCE hInstance) {
@@ -263,7 +305,7 @@ namespace tde {
 		PipelineBuilder pipelineBuilder;
 
 		//use the triangle layout we created
-		pipelineBuilder.pipelineLayout = trianglePipelineLayout;
+		pipelineBuilder.set_pipeline_layout(trianglePipelineLayout);
 		//connecting the vertex and pixel shaders to the pipeline
 		pipelineBuilder.set_shaders(triangleVertexShader, triangleFragShader);
 		//it will draw triangles
@@ -279,7 +321,9 @@ namespace tde {
 		//no depth testing
 		pipelineBuilder.disable_depthtest();
 
-		
+		auto vd = Vertex::GetVertexInputDescription();
+
+		pipelineBuilder.set_vertex_description(vd);
 
 		//connect the image format we will draw into, from draw image
 		pipelineBuilder.set_color_attachment_format(swapchain.colorFormat);
@@ -436,7 +480,8 @@ namespace tde {
 		if (resize_requested) {
 			ResizeSwapchain();
 		}
-
+		currentFrame++;
+		if (currentFrame == MAX_FRAMES_IN_FLIGHT) currentFrame = 0;
 
 
 		vk_check(vkWaitForFences(device, 1, &get_current_frame().inFlightFence, true, 1000000000));
@@ -480,18 +525,58 @@ namespace tde {
 		vkutil::transition_image(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
 
+
+		VkRenderingAttachmentInfo colorAttachment = vkinit::attachment_info(swapchain.imageViews[swapchainImageIndex], nullptr, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		VkRenderingInfo renderInfo = vkinit::rendering_info(swapchain.extent, &colorAttachment);
+		vkCmdBeginRendering(cmd, &renderInfo);
+
 		//draw here or before presentation image trasition?
 		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, trianglePipeline);
+
+		VkViewport viewport{};
+		viewport.x = 0.0f;
+		viewport.y = 0.0f;
+		viewport.width = static_cast<float>(swapchain.extent.width);
+		viewport.height = static_cast<float>(swapchain.extent.height);
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+		vkCmdSetViewport(cmd, 0, 1, &viewport);
+
+		VkRect2D scissor{};
+		scissor.offset = { 0, 0 };
+		scissor.extent = swapchain.extent;
+		vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+
+
+		mat4_t proj = glm::perspective(glm::radians(60.0f), 720.0f / 420.0f, 0.1f, 1000.0f); //this only change when fov or zNear/zFar changes
+		proj[1][1] *= -1; //glm is flipped (OpenGL v Vulkan up? y neg up or down?)
+	
+
+
+		UniformBufferObject ubo{};
+		mat4_t testmat{ 1 };
+		ubo.model = testmat;
+		ubo.view = testmat;
+		ubo.proj = proj;
+
+		memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
+
+		vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, trianglePipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
 
 		//PushConstants push_constants;
 		//push_constants.worldMatrix = glm::mat4{ 1.f };
 		//push_constants.vertexBuffer = rectangle.vertexBufferAddress;
-		mat4_t testmat{ 1 };
+		//mat4_t testmat{ 1 };
 		vkCmdPushConstants(cmd, trianglePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4_t), &testmat);
 		//vkCmdBindIndexBuffer(cmd, indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 
-		//vkCmdDrawIndexed(cmd, 6, 1, 0, 0, 0);
+		plane.Draw();
 
+
+		//vkutil::transition_image(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+		//vkCmdDrawIndexed(cmd, 6, 1, 0, 0, 0);
+		vkCmdEndRendering(cmd);
 
 		//finalize the command buffer (we can no longer add commands, but it can now be executed)
 		vk_check(vkEndCommandBuffer(cmd));

@@ -24,6 +24,21 @@ namespace tde {
 
 		void Draw();
 
+		void Destroy();
+
 		~Model();
 	};
+}
+
+namespace tde {
+	struct Mesh {
+		std::vector<vec3_t> vertices;
+		std::vector<vec3_t> normals;
+		std::vector<vec3_t> colors;
+		std::vector<vec2_t> uvs;
+		std::vector<uint16_t> indices;
+	};
+
+	void MeshToVertices(const Mesh& mesh, std::vector<tde::Vertex>& vertices);
+	
 }

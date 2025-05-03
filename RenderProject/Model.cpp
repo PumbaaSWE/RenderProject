@@ -73,6 +73,12 @@ namespace tde{
 	}
 
 	Model::~Model() {
+		Destroy();
+
+		//PRINTL("MODEL DESTRUCT**");
+	}
+
+	void Model::Destroy() {
 		if (!renderer)
 			return;
 
@@ -82,7 +88,25 @@ namespace tde{
 
 		vkDestroyBuffer(device, indexBuffer, nullptr);
 		vkFreeMemory(device, indexBufferMemory, nullptr);
-
-		//PRINTL("MODEL DESTRUCT**");
+		renderer = nullptr;
+		//PRINTL("MODEL DESTROY**");
 	}
+}
+
+
+void tde::MeshToVertices(const tde::Mesh& mesh, std::vector<tde::Vertex>& vertices) {
+	vertices.resize(mesh.vertices.size());
+	for (size_t i = 0; i < vertices.size(); i++)
+	{
+		vertices[i].pos = mesh.vertices[i];
+	}
+	for (size_t i = 0; i < mesh.normals.size(); i++)
+	{
+		vertices[i].normal = mesh.normals[i];
+	}
+
+	//for (size_t i = 0; i < mesh.uvs.size(); i++)
+	//{
+	//	vertices[i]. = mesh.uvs[i];
+	//}
 }

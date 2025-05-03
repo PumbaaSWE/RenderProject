@@ -12,7 +12,7 @@ namespace tde {
 		std::vector<VkImage> images{};
 		std::vector<VkImageView> imageViews{};
 		uint32_t queueNodeIndex{ UINT32_MAX };
-
+		VkExtent2D extent = {};
 
 		Swapchain();
 		~Swapchain();
@@ -62,7 +62,8 @@ namespace tde {
 
 		VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
 		VkPresentModeKHR presentMode = vsync ? VK_PRESENT_MODE_FIFO_KHR : chooseSwapPresentMode(swapChainSupport.presentModes);
-		VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, width, height);
+		extent = chooseSwapExtent(swapChainSupport.capabilities, width, height);
+
 
 		uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1; //at least one more than min to avoid waiting
 
