@@ -4,6 +4,7 @@
 #include "vk_images.h"
 #include "Pipeline.h"
 #include "Model.h"
+#include "obj_loader.h"
 
 //this spart below should be copied with implementation guard once we get to it
 
@@ -111,15 +112,7 @@ namespace tde {
 		device = deviceBuilder.build();
 		graphicsQueue = deviceBuilder.graphicsQueue;
 		graphicsQueueFamily = deviceBuilder.graphicsQueueFamily;
-
-
-
-		//VkFormatProperties2 props{ VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2 };
-		//vkGetPhysicalDeviceFormatProperties2(physicalDevice, VK_FORMAT_R32G32B32_SFLOAT, &props);
-		//printl("bufferFeatures: ", (int)(props.formatProperties.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT));
-
-		//printl("break");
-
+		presentQueue = deviceBuilder.presentQueue;
 
 
 		//
@@ -138,19 +131,54 @@ namespace tde {
 
 
 
-		const int s = 50;
+		const int s = 0.5f;
+		//std::vector<tde::Vertex> vertices = {
+		//{{ s, -s, 	0}, {1.0f, 0.0f, 0.5f}},
+		//{{ s,  s, 	0}, {0.0f, 0.0f, 1.0f}},
+		//{{-s,  s, 	0}, {0.0f, 1.0f, 0.0f}},
+		//{{-s, -s, 	0}, {0.1f, 1.0f, 0.0f}}
+		//};
+
+		const vec3_t positions[3] = {
+			vec3_t(1.f, 1.f, 0.0f),
+			vec3_t(-1.f, 1.f, 0.0f),
+			vec3_t(0.f, -1.f, 0.0f)
+		};
+
+		//const array of colors for the triangle
+		const vec3_t colors[3] = {
+			vec3_t(1.0f, 0.0f, 0.0f), //red
+			vec3_t(0.0f, 1.0f, 0.0f), //green
+			vec3_t(00.f, 0.0f, 1.0f)  //blue
+		};
+
 		std::vector<tde::Vertex> vertices = {
-		{{ s, 0, -s	}, {1.0f, 0.0f, 0.5f}},
-		{{ s, 0,  s	}, {0.0f, 0.0f, 1.0f}},
-		{{-s, 0,  s	}, {0.0f, 1.0f, 0.0f}},
-		{{-s, 0, -s	}, {0.1f, 1.0f, 0.0f}}
+		{{ s, 0, -s 	}, {1.0f, 0.0f, 0.5f}},
+		{{ s, 0,  s		}, {0.0f, 0.0f, 1.0f}},
+		{{-s, 0,  s		}, {0.0f, 1.0f, 0.0f}},
+		{{-s, 0, -s		}, {0.1f, 1.0f, 0.0f}}
 		};
 
 		std::vector<uint16_t> indices = {
 			0, 2, 1, 2, 0, 3
 		};
-		plane = Model(this, vertices, indices);
 
+		std::vector<obj_loader::Vertex> verts;
+		obj_loader::LoadFromFile("cube_triangulated.obj", verts, indices);
+		vertices.clear();
+		for (size_t i = 0; i < verts.size(); i++)
+		{
+			vertices.push_back({ verts[i].pos,verts[i].normal });
+		}
+
+		//indices.clear();
+		//for (size_t i = 0; i < 3; i++)
+		//{
+		//	vertices.push_back({ positions[i],colors[i] });
+		//	indices.push_back(i);
+		//}
+
+		plane = Model(this, vertices, indices);
 		mainDeletionQueue.push_function([&]() {plane.Destroy(); });
 
 
@@ -304,33 +332,21 @@ namespace tde {
 
 		PipelineBuilder pipelineBuilder;
 
-		//use the triangle layout we created
 		pipelineBuilder.set_pipeline_layout(trianglePipelineLayout);
-		//connecting the vertex and pixel shaders to the pipeline
 		pipelineBuilder.set_shaders(triangleVertexShader, triangleFragShader);
-		//it will draw triangles
 		pipelineBuilder.set_input_topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-		//filled triangles
 		pipelineBuilder.set_polygon_mode(VK_POLYGON_MODE_FILL);
-		//no backface culling
 		pipelineBuilder.set_cull_mode(VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
-		//no multisampling
 		pipelineBuilder.set_multisampling_none();
-		//no blending
 		pipelineBuilder.disable_blending();
-		//no depth testing
 		pipelineBuilder.disable_depthtest();
 
-		auto vd = Vertex::GetVertexInputDescription();
-
-		pipelineBuilder.set_vertex_description(vd);
+		pipelineBuilder.set_vertex_description(Vertex::GetVertexInputDescription());
 
 		//connect the image format we will draw into, from draw image
 		pipelineBuilder.set_color_attachment_format(swapchain.colorFormat);
 		pipelineBuilder.set_depth_format(VK_FORMAT_UNDEFINED);
 		
-		//pipelineBuilder.set_vertex_description();
-
 		//finally build the pipeline
 		trianglePipeline = pipelineBuilder.build_pipeline(device);
 
@@ -474,20 +490,19 @@ namespace tde {
 	VkCommandBuffer& Renderer::GetCommandBuffer() {
 		return get_current_frame().mainCommandBuffer;
 	}
-
+	uint32_t swapchainImageIndex;
 	void Renderer::BeginFrame() {
 
 		if (resize_requested) {
 			ResizeSwapchain();
 		}
-		currentFrame++;
-		if (currentFrame == MAX_FRAMES_IN_FLIGHT) currentFrame = 0;
+
 
 
 		vk_check(vkWaitForFences(device, 1, &get_current_frame().inFlightFence, true, 1000000000));
 		vk_check(vkResetFences(device, 1, &get_current_frame().inFlightFence));
 
-		uint32_t swapchainImageIndex;
+		
 		VkResult e = swapchain.AcquireNextImage(get_current_frame().imageAvailableSemaphore, swapchainImageIndex);// vkAcquireNextImageKHR(device, swapchain, 1000000000, get_current_frame().imageAvailableSemaphore, nullptr, &swapchainImageIndex);
 		if (e == VK_ERROR_OUT_OF_DATE_KHR) {
 			resize_requested = true;
@@ -509,30 +524,33 @@ namespace tde {
 		vk_check(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
 		
 
-		vkutil::transition_image(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+		//vkutil::transition_image(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 
-		//make a clear-color from frame number. This will flash with a 120 frame period.
+		////make a clear-color from frame number. This will flash ...
 		VkClearColorValue clearValue;
-		float flash = std::abs(std::sin(frameNumber / 120.f));
-		clearValue = { { 0.0f, 0.0f, flash, 1.0f } };
+		//float flash = std::abs(std::sin(frameNumber / 120.f));
+		//clearValue = { { 0.0f, 0.0f, flash, 1.0f } };
 
-		VkImageSubresourceRange clearRange = vkinit::image_subresource_range(VK_IMAGE_ASPECT_COLOR_BIT);
+		clearValue = { { 99.0f / 255.0f, 149.0f / 255.0f, 238.0f/255.0f } }; //cornflower blue?
 
-		//clear image
-		vkCmdClearColorImage(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, &clearValue, 1, &clearRange);
+		//VkImageSubresourceRange clearRange = vkinit::image_subresource_range(VK_IMAGE_ASPECT_COLOR_BIT);
+
+		////clear image
+		//vkCmdClearColorImage(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, &clearValue, 1, &clearRange);
 
 		//make the swapchain image into presentable mode
-		vkutil::transition_image(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+		//vkutil::transition_image(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+		vkutil::transition_image(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-
-
+		//dynamic rendering stuff
 		VkRenderingAttachmentInfo colorAttachment = vkinit::attachment_info(swapchain.imageViews[swapchainImageIndex], nullptr, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-		VkRenderingInfo renderInfo = vkinit::rendering_info(swapchain.extent, &colorAttachment);
+		VkRenderingInfo renderInfo = vkinit::rendering_info(swapchain.extent, &colorAttachment, nullptr);
 		vkCmdBeginRendering(cmd, &renderInfo);
 
-		//draw here or before presentation image trasition?
+		//bind the pipeline
 		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, trianglePipeline);
 
+		//set dynamic state
 		VkViewport viewport{};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
@@ -547,37 +565,40 @@ namespace tde {
 		scissor.extent = swapchain.extent;
 		vkCmdSetScissor(cmd, 0, 1, &scissor);
 
+		//printl("extent: ", swapchain.extent.width, ", ", swapchain.extent.height);
 
-
+		//Set and fill uniformBuffers
 		mat4_t proj = glm::perspective(glm::radians(60.0f), 720.0f / 420.0f, 0.1f, 1000.0f); //this only change when fov or zNear/zFar changes
 		proj[1][1] *= -1; //glm is flipped (OpenGL v Vulkan up? y neg up or down?)
 	
-
+		glm::mat4 testmat = glm::mat4(1.0f);
+		glm::mat4 model = glm::mat4(1.0f);
+		glm::mat4 view = glm::mat4(1.0f);
+		//mat4_t model = glm::rotate()
+		model = glm::rotate(model, 60.0f, { 0,1,1 }); // rotate around the y axis
+		view = glm::translate(view, {0, 0,-10});
+		//view = glm::translate(testmat, {0,-1,10});
 
 		UniformBufferObject ubo{};
-		mat4_t testmat{ 1 };
 		ubo.model = testmat;
-		ubo.view = testmat;
+		ubo.view = view;
 		ubo.proj = proj;
 
 		memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
-
 		vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, trianglePipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
 
-		//PushConstants push_constants;
-		//push_constants.worldMatrix = glm::mat4{ 1.f };
-		//push_constants.vertexBuffer = rectangle.vertexBufferAddress;
-		//mat4_t testmat{ 1 };
-		vkCmdPushConstants(cmd, trianglePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4_t), &testmat);
-		//vkCmdBindIndexBuffer(cmd, indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 
+		//PushConstants
+		vkCmdPushConstants(cmd, trianglePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4_t), &model);
+
+		//draw the stupid model
 		plane.Draw();
 
 
-		//vkutil::transition_image(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-		//vkCmdDrawIndexed(cmd, 6, 1, 0, 0, 0);
 		vkCmdEndRendering(cmd);
 
+		vkutil::transition_image(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+		//vkutil::transition_image(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 		//finalize the command buffer (we can no longer add commands, but it can now be executed)
 		vk_check(vkEndCommandBuffer(cmd));
 
@@ -593,28 +614,15 @@ namespace tde {
 		// _renderFence will now block until the graphic commands finish execution
 		vk_check(vkQueueSubmit2(graphicsQueue, 1, &submit, get_current_frame().inFlightFence));
 
-		//prepare present
-		// this will put the image we just rendered to into the visible window.
-		// we want to wait on the _renderSemaphore for that, 
-		// as its necessary that drawing commands have finished before the image is displayed to the user
-		//VkPresentInfoKHR presentInfo = {};
-		//presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-		//presentInfo.pNext = nullptr;
-		//presentInfo.pSwapchains = &swapchain;
-		//presentInfo.swapchainCount = 1;
-
-		//presentInfo.pWaitSemaphores = &get_current_frame().renderFinishedSemaphore;
-		//presentInfo.waitSemaphoreCount = 1;
-
-		//presentInfo.pImageIndices = &swapchainImageIndex;
-
-		//
+		//present
 		VkResult presentResult = swapchain.QueuePresent(graphicsQueue, swapchainImageIndex, get_current_frame().renderFinishedSemaphore);  //vkQueuePresentKHR(graphicsQueue, &presentInfo);
 		if (presentResult == VK_ERROR_OUT_OF_DATE_KHR) {
 			resize_requested = true;
 		}
 
 		frameNumber++;
+		currentFrame++;
+		if (currentFrame == MAX_FRAMES_IN_FLIGHT) currentFrame = 0;
 	}
 	
 

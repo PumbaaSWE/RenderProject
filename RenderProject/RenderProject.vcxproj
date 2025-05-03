@@ -166,8 +166,6 @@
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\WindowApp\WindowApp\shaders\shader.frag" />
-    <None Include="..\..\WindowApp\WindowApp\shaders\shader.vert" />
     <None Include="README.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

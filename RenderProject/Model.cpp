@@ -70,6 +70,8 @@ namespace tde{
 
 
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indexCount), 1, 0, 0, 0);
+
+		//printl("Model::Draw indexCount = ", static_cast<uint32_t>(indexCount));
 	}
 
 	Model::~Model() {

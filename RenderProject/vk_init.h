@@ -54,9 +54,8 @@ namespace vkinit {
 	VkPipelineLayoutCreateInfo pipeline_layout_create_info();
 	VkPipelineDepthStencilStateCreateInfo depth_stencil_create_info(bool bDepthTest, bool bDepthWrite, VkCompareOp compareOp);
 
-
 	VkRenderingAttachmentInfo attachment_info(VkImageView view, VkClearValue* clear, VkImageLayout layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-	VkRenderingInfo rendering_info(VkExtent2D extent, VkRenderingAttachmentInfo* renderingAttachmentInfo);
+	VkRenderingInfo rendering_info(VkExtent2D renderExtent, VkRenderingAttachmentInfo* colorAttachment, VkRenderingAttachmentInfo* depthAttachment);
 }
 
 
@@ -333,16 +332,21 @@ VkRenderingAttachmentInfo vkinit::attachment_info(
 	}
 }
 
-VkRenderingInfo vkinit::rendering_info(VkExtent2D extent, VkRenderingAttachmentInfo* colorAttachmentInfo) {
-	VkRenderingInfo renderingInfo{};
-	renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
-	renderingInfo.pNext = nullptr;
-	renderingInfo.renderArea = { {0,0}, extent };
-	renderingInfo.layerCount = 1;
-	renderingInfo.pColorAttachments = colorAttachmentInfo;
-	//renderingInfo.pDepthAttachment = depthAttachmentInfo;
-	//renderingInfo.pStencilAttachment = stencilAttachmentInfo;
-	return renderingInfo;
+VkRenderingInfo vkinit::rendering_info(VkExtent2D renderExtent, VkRenderingAttachmentInfo* colorAttachment,
+	VkRenderingAttachmentInfo* depthAttachment)
+{
+	VkRenderingInfo renderInfo{};
+	renderInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+	renderInfo.pNext = nullptr;
+
+	renderInfo.renderArea = VkRect2D{ VkOffset2D { 0, 0 }, renderExtent };
+	renderInfo.layerCount = 1;
+	renderInfo.colorAttachmentCount = 1;
+	renderInfo.pColorAttachments = colorAttachment;
+	renderInfo.pDepthAttachment = depthAttachment;
+	renderInfo.pStencilAttachment = nullptr;
+
+	return renderInfo;
 }
 
 

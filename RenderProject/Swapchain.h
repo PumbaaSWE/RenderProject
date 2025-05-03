@@ -21,7 +21,7 @@ namespace tde {
 		void SetContext(VkDevice device, VkPhysicalDevice physicalDevice, VkInstance instance, VkSurfaceKHR surface);
 		void Create(int width, int height, bool vsync = false);
 		VkResult AcquireNextImage(VkSemaphore presentCompleteSemaphore, uint32_t& imageIndex);
-		VkResult QueuePresent(VkQueue queue, uint32_t imageIndex, VkSemaphore waitSemaphore);
+		VkResult QueuePresent(VkQueue queue, uint32_t& imageIndex, VkSemaphore waitSemaphore);
 
 	private:
 		VkInstance instance = VK_NULL_HANDLE;
@@ -152,7 +152,7 @@ namespace tde {
 		return vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, presentCompleteSemaphore, (VkFence)nullptr, &imageIndex);
 	}
 
-	VkResult Swapchain::QueuePresent(VkQueue queue, uint32_t imageIndex, VkSemaphore waitSemaphore)
+	VkResult Swapchain::QueuePresent(VkQueue queue, uint32_t& imageIndex, VkSemaphore waitSemaphore)
 	{
 		VkPresentInfoKHR presentInfo = {};
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;

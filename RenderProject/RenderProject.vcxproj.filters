@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="shaders">
-      <UniqueIdentifier>{bb33cedb-9e2a-40f6-b43b-a2f0290ec90f}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Window.h">
@@ -105,12 +102,6 @@
   <ItemGroup>
     <None Include="README.md">
       <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\..\WindowApp\WindowApp\shaders\shader.frag">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="..\..\WindowApp\WindowApp\shaders\shader.vert">
-      <Filter>shaders</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -126,6 +126,7 @@ namespace tde {
 
 		renderInfo = { .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
 
+		vertexInputInfo = vkinit::vertex_input_state_create_info();
 
 		shaderStages.clear();
 	}
