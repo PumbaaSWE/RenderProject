@@ -130,55 +130,19 @@ namespace tde {
 
 
 
+		std::vector<tde::Vertex> vertices;
+		std::vector<uint16_t> indices;
 
-		const int s = 0.5f;
-		//std::vector<tde::Vertex> vertices = {
-		//{{ s, -s, 	0}, {1.0f, 0.0f, 0.5f}},
-		//{{ s,  s, 	0}, {0.0f, 0.0f, 1.0f}},
-		//{{-s,  s, 	0}, {0.0f, 1.0f, 0.0f}},
-		//{{-s, -s, 	0}, {0.1f, 1.0f, 0.0f}}
-		//};
-
-		const vec3_t positions[3] = {
-			vec3_t(1.f, 1.f, 0.0f),
-			vec3_t(-1.f, 1.f, 0.0f),
-			vec3_t(0.f, -1.f, 0.0f)
-		};
-
-		//const array of colors for the triangle
-		const vec3_t colors[3] = {
-			vec3_t(1.0f, 0.0f, 0.0f), //red
-			vec3_t(0.0f, 1.0f, 0.0f), //green
-			vec3_t(00.f, 0.0f, 1.0f)  //blue
-		};
-
-		std::vector<tde::Vertex> vertices = {
-		{{ s, 0, -s 	}, {1.0f, 0.0f, 0.5f}},
-		{{ s, 0,  s		}, {0.0f, 0.0f, 1.0f}},
-		{{-s, 0,  s		}, {0.0f, 1.0f, 0.0f}},
-		{{-s, 0, -s		}, {0.1f, 1.0f, 0.0f}}
-		};
-
-		std::vector<uint16_t> indices = {
-			0, 2, 1, 2, 0, 3
-		};
-
-		std::vector<obj_loader::Vertex> verts;
-		obj_loader::LoadFromFile("cube_triangulated.obj", verts, indices);
-		vertices.clear();
-		for (size_t i = 0; i < verts.size(); i++)
-		{
-			vertices.push_back({ verts[i].pos,verts[i].normal });
-		}
-
-		//indices.clear();
-		//for (size_t i = 0; i < 3; i++)
+		//std::vector<obj_loader::Vertex> verts;
+		//obj_loader::LoadFromFile("cube_triangulated.obj", verts, indices);
+		//vertices.clear();
+		//for (size_t i = 0; i < verts.size(); i++)
 		//{
-		//	vertices.push_back({ positions[i],colors[i] });
-		//	indices.push_back(i);
+		//	vertices.push_back({ verts[i].pos,verts[i].normal });
 		//}
 
-		plane = Model(this, vertices, indices);
+
+		plane = Model(this, Model::cube_verts, Model::cube_indices);
 		mainDeletionQueue.push_function([&]() {plane.Destroy(); });
 
 
@@ -335,7 +299,7 @@ namespace tde {
 		pipelineBuilder.set_pipeline_layout(trianglePipelineLayout);
 		pipelineBuilder.set_shaders(triangleVertexShader, triangleFragShader);
 		pipelineBuilder.set_input_topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-		pipelineBuilder.set_polygon_mode(VK_POLYGON_MODE_FILL);
+		pipelineBuilder.set_polygon_mode(VK_POLYGON_MODE_LINE);
 		pipelineBuilder.set_cull_mode(VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
 		pipelineBuilder.set_multisampling_none();
 		pipelineBuilder.disable_blending();

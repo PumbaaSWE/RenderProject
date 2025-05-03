@@ -27,6 +27,10 @@ namespace tde {
 		void Destroy();
 
 		~Model();
+
+
+		static std::vector<tde::Vertex> cube_verts;
+		static std::vector<uint16_t> cube_indices;
 	};
 }
 
@@ -41,4 +45,6 @@ namespace tde {
 
 	void MeshToVertices(const Mesh& mesh, std::vector<tde::Vertex>& vertices);
 	
+
+
 }
