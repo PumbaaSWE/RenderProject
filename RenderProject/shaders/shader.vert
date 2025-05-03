@@ -22,6 +22,6 @@ void main() {
 	gl_Position = ubo.proj * ubo.view * pc.model * vec4(inPosition, 1.0);
     //vec3 temp = ubo.model[0].xyz;
 
-
-    normal = vec3(1,1,1);
+	vec4 n = ubo.proj * vec4(inNormal, 1.0);
+    normal = n.xyz;
 }

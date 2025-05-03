@@ -115,12 +115,13 @@ namespace tde {
 		presentQueue = deviceBuilder.presentQueue;
 
 
-		//
-		CreateSwapchain(width, height);
-
 		InitCommands();
 
 		InitSyncStructures();
+		
+		CreateSwapchain(width, height);
+
+
 
 		CreateUniformBuffers();
 
@@ -299,17 +300,20 @@ namespace tde {
 		pipelineBuilder.set_pipeline_layout(trianglePipelineLayout);
 		pipelineBuilder.set_shaders(triangleVertexShader, triangleFragShader);
 		pipelineBuilder.set_input_topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-		pipelineBuilder.set_polygon_mode(VK_POLYGON_MODE_LINE);
-		pipelineBuilder.set_cull_mode(VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
+		pipelineBuilder.set_polygon_mode(VK_POLYGON_MODE_FILL);
+		pipelineBuilder.set_cull_mode(VK_CULL_MODE_FRONT_BIT, VK_FRONT_FACE_CLOCKWISE);
 		pipelineBuilder.set_multisampling_none();
 		pipelineBuilder.disable_blending();
-		pipelineBuilder.disable_depthtest();
+		//pipelineBuilder.disable_depthtest();
+		pipelineBuilder.enable_depthtest(true, VK_COMPARE_OP_GREATER_OR_EQUAL);
+
 
 		pipelineBuilder.set_vertex_description(Vertex::GetVertexInputDescription());
 
 		//connect the image format we will draw into, from draw image
 		pipelineBuilder.set_color_attachment_format(swapchain.colorFormat);
-		pipelineBuilder.set_depth_format(VK_FORMAT_UNDEFINED);
+		//pipelineBuilder.set_depth_format(VK_FORMAT_UNDEFINED);
+		pipelineBuilder.set_depth_format(VK_FORMAT_D32_SFLOAT);
 		
 		//finally build the pipeline
 		trianglePipeline = pipelineBuilder.build_pipeline(device);
@@ -380,13 +384,23 @@ namespace tde {
 
 	void Renderer::DestroySwapchain(){
 		swapchain.Destroy();
-
+		vkDestroyImageView(device, depthImageView, nullptr);
+		vkDestroyImage(device, depthImage, nullptr);
+		vkFreeMemory(device, depthImageMemory, nullptr);
 	}
 
 
 	////TODO Use a builder to shrink it a bit
 	void Renderer::CreateSwapchain(uint32_t width, uint32_t height) {
 
+		
+		VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
+		CreateImage(width, height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
+		depthImageView = CreateImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+		ImmediateSubmit([&](VkCommandBuffer cmd) { vkutil::transition_image(cmd, depthImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL); });
+
+
+		
 		swapchain.SetContext(device, physicalDevice, instance, surface);
 		swapchain.Create(width, height);
 
@@ -488,27 +502,40 @@ namespace tde {
 		vk_check(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
 		
 
-		//vkutil::transition_image(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
-
+		vkutil::transition_image(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+		//vkutil::transition_image(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 		////make a clear-color from frame number. This will flash ...
-		VkClearColorValue clearValue;
+		//VkClearColorValue clearValue;
 		//float flash = std::abs(std::sin(frameNumber / 120.f));
 		//clearValue = { { 0.0f, 0.0f, flash, 1.0f } };
 
-		clearValue = { { 99.0f / 255.0f, 149.0f / 255.0f, 238.0f/255.0f } }; //cornflower blue?
+		//clearValue = { { 99.0f / 255.0f, 149.0f / 255.0f, 238.0f/255.0f } }; //cornflower blue?
 
 		//VkImageSubresourceRange clearRange = vkinit::image_subresource_range(VK_IMAGE_ASPECT_COLOR_BIT);
 
 		////clear image
 		//vkCmdClearColorImage(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, &clearValue, 1, &clearRange);
 
+
+		//VkClearValue clearDepthValue = {0};
+		//VkImageSubresourceRange clearDepthRange = vkinit::image_subresource_range(VK_IMAGE_ASPECT_COLOR_BIT);
+		//vkCmdClearColorImage(cmd, depthImage, VK_IMAGE_LAYOUT_GENERAL, &clearDepthValue, 1, &clearDepthRange);
+
 		//make the swapchain image into presentable mode
 		//vkutil::transition_image(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 		vkutil::transition_image(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		//vkutil::transition_image(cmd, depthImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+
+		VkClearValue clearValue{};
+		clearValue.color = { { 99.0f / 255.0f, 149.0f / 255.0f, 238.0f / 255.0f } };
 
 		//dynamic rendering stuff
-		VkRenderingAttachmentInfo colorAttachment = vkinit::attachment_info(swapchain.imageViews[swapchainImageIndex], nullptr, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-		VkRenderingInfo renderInfo = vkinit::rendering_info(swapchain.extent, &colorAttachment, nullptr);
+		VkRenderingAttachmentInfo colorAttachment = vkinit::attachment_info(swapchain.imageViews[swapchainImageIndex], &clearValue, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		//VkRenderingAttachmentInfo depthAttachment = vkinit::attachment_info(depthImageView, &clearDepthValue, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+		VkRenderingAttachmentInfo depthAttachment = vkinit::depth_attachment_info(depthImageView, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+		//depthAttachment.clearValue = clearDepthValue;
+
+		VkRenderingInfo renderInfo = vkinit::rendering_info(swapchain.extent, &colorAttachment, &depthAttachment);
 		vkCmdBeginRendering(cmd, &renderInfo);
 
 		//bind the pipeline
@@ -540,7 +567,7 @@ namespace tde {
 		glm::mat4 view = glm::mat4(1.0f);
 		//mat4_t model = glm::rotate()
 		model = glm::rotate(model, 60.0f, { 0,1,1 }); // rotate around the y axis
-		view = glm::translate(view, {0, 0,-10});
+		view = glm::translate(view, {0, 0, -10});
 		//view = glm::translate(testmat, {0,-1,10});
 
 		UniformBufferObject ubo{};
@@ -555,7 +582,20 @@ namespace tde {
 		//PushConstants
 		vkCmdPushConstants(cmd, trianglePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4_t), &model);
 
-		//draw the stupid model
+		plane.Draw();
+
+		glm::mat4 model2 = glm::mat4(1.0f);
+		model2 = glm::translate(model2, { 0, 0, 8 });
+		model2 = glm::rotate(model2, 30.0f, { 0,1,0 }); // rotate around the y axis
+		vkCmdPushConstants(cmd, trianglePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4_t), &model2);
+
+		plane.Draw();
+
+		glm::mat4 model3 = glm::mat4(1.0f);
+		model3 = glm::translate(model3, { 0, 0, 4 });
+		model3 = glm::rotate(model3, 70.0f, { 1,1,0 }); // rotate around the y axis
+		vkCmdPushConstants(cmd, trianglePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4_t), &model3);
+
 		plane.Draw();
 
 
@@ -742,4 +782,59 @@ namespace tde {
 		vk_check(vkWaitForFences(device, 1, &imFence, true, 9999999999));
 	}
 
+
+	void Renderer::CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
+		VkImageCreateInfo imageInfo{};
+		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		imageInfo.imageType = VK_IMAGE_TYPE_2D;
+		imageInfo.extent.width = width;
+		imageInfo.extent.height = height;
+		imageInfo.extent.depth = 1;
+		imageInfo.mipLevels = 1;
+		imageInfo.arrayLayers = 1;
+		imageInfo.format = format;
+		imageInfo.tiling = tiling;
+		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		imageInfo.usage = usage;
+		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+		if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create image!");
+		}
+
+		VkMemoryRequirements memRequirements;
+		vkGetImageMemoryRequirements(device, image, &memRequirements);
+
+		VkMemoryAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		allocInfo.allocationSize = memRequirements.size;
+		allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+
+		if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+			throw std::runtime_error("failed to allocate image memory!");
+		}
+
+		vkBindImageMemory(device, image, imageMemory, 0);
+	}
+
+	VkImageView Renderer::CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
+		VkImageViewCreateInfo viewInfo{};
+		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		viewInfo.image = image;
+		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		viewInfo.format = format;
+		viewInfo.subresourceRange.aspectMask = aspectFlags;
+		viewInfo.subresourceRange.baseMipLevel = 0;
+		viewInfo.subresourceRange.levelCount = 1;
+		viewInfo.subresourceRange.baseArrayLayer = 0;
+		viewInfo.subresourceRange.layerCount = 1;
+
+		VkImageView imageView;
+		if (vkCreateImageView(device, &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create texture image view!");
+		}
+
+		return imageView;
+	}
 }

@@ -23,6 +23,7 @@ namespace tde {
 		Model(Renderer* _renderer, std::vector<tde::Vertex>& vertices, std::vector<uint16_t>& indices);
 
 		void Draw();
+		void Draw(mat4_t& transform);
 
 		void Destroy();
 

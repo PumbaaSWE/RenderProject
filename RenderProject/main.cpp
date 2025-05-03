@@ -51,7 +51,7 @@ int main()
 	//};
 
 	//std::vector<obj_loader::Vertex> verts;
-	//obj_loader::LoadFromFile("cube_triangulated.obj", verts, indices);
+	//obj_loader::LoadFromFile("D:\\Blender\\cube\\cube.obj", verts, indices);
 	//std::ofstream myfile;
 	//myfile.open("example.txt");
 	//

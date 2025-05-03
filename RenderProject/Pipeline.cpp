@@ -78,7 +78,7 @@ namespace tde {
 	//we now use all of the info structs we have been writing into into this one to create the pipeline
 		VkGraphicsPipelineCreateInfo pipelineInfo = {};
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-		pipelineInfo.pNext = nullptr;
+		pipelineInfo.pNext = &renderInfo; //OMG
 
 		pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
 		pipelineInfo.pStages = shaderStages.data();
@@ -92,8 +92,10 @@ namespace tde {
 		pipelineInfo.renderPass = VK_NULL_HANDLE;
 		pipelineInfo.subpass = 0;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-		pipelineInfo.pDepthStencilState = &depthStencil;
 
+		pipelineInfo.pDepthStencilState = &depthStencil;
+		//renderInfo
+		
 		pipelineInfo.pDynamicState = &dynamicState;
 
 		//it's easy to error out on create graphics pipeline, so we handle it a bit better than the common VK_CHECK case
@@ -191,8 +193,8 @@ namespace tde {
 		depthStencil.stencilTestEnable = VK_FALSE;
 		depthStencil.front = {};
 		depthStencil.back = {};
-		depthStencil.minDepthBounds = 0.f;
-		depthStencil.maxDepthBounds = 1.f;
+		depthStencil.minDepthBounds = 0.0f;
+		depthStencil.maxDepthBounds = 1.0f;
 		return *this;
 	}
 
@@ -269,8 +271,8 @@ namespace tde {
 		depthStencil.stencilTestEnable = VK_FALSE;
 		depthStencil.front = {};
 		depthStencil.back = {};
-		depthStencil.minDepthBounds = 0.f;
-		depthStencil.maxDepthBounds = 1.f;
+		depthStencil.minDepthBounds = 0.0f;
+		depthStencil.maxDepthBounds = 1.0f;
 		return *this;
 	}
 

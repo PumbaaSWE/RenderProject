@@ -169,7 +169,7 @@ namespace tde {
 
 	auto GetSupportedInstanceLayers();
 }
-
+//#define INIT_IMPLEMENTATION
 #ifdef INIT_IMPLEMENTATION
 namespace tde {
 	auto GetSupportedInstanceExtensions() {
@@ -568,14 +568,13 @@ namespace tde {
 			queueCreateInfos.push_back(queueCreateInfo);
 		}
 
-		VkPhysicalDeviceFeatures deviceFeatures{};
 
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 		createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 		createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
-		createInfo.pEnabledFeatures = &deviceFeatures;
+		//createInfo.pEnabledFeatures = &deviceFeatures;
 
 
 		//for (size_t i = 0; i < physicalDevice.deviceExtensions.size(); i++)
@@ -604,6 +603,8 @@ namespace tde {
 		features12.pNext = &features13;
 
 		VkPhysicalDeviceFeatures features = {};
+		features.fillModeNonSolid = VK_TRUE;
+
 		VkPhysicalDeviceFeatures2 features2 = {};
 		features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 		features2.pNext = &features12;
