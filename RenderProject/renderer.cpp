@@ -305,7 +305,7 @@ namespace tde {
 		pipelineBuilder.set_multisampling_none();
 		pipelineBuilder.disable_blending();
 		//pipelineBuilder.disable_depthtest();
-		pipelineBuilder.enable_depthtest(true, VK_COMPARE_OP_GREATER_OR_EQUAL);
+		pipelineBuilder.enable_depthtest(true, VK_COMPARE_OP_LESS_OR_EQUAL);
 
 
 		pipelineBuilder.set_vertex_description(Vertex::GetVertexInputDescription());
@@ -529,12 +529,15 @@ namespace tde {
 		VkClearValue clearValue{};
 		clearValue.color = { { 99.0f / 255.0f, 149.0f / 255.0f, 238.0f / 255.0f } };
 		clearValue.color = { { 0, 0, 0 } };
+		clearValue.depthStencil = { 0,0 };
 
 		//dynamic rendering stuff
 		VkRenderingAttachmentInfo colorAttachment = vkinit::attachment_info(swapchain.imageViews[swapchainImageIndex], &clearValue, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 		//VkRenderingAttachmentInfo depthAttachment = vkinit::attachment_info(depthImageView, &clearDepthValue, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
 		VkRenderingAttachmentInfo depthAttachment = vkinit::depth_attachment_info(depthImageView, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
-		//depthAttachment.clearValue = clearDepthValue;
+		depthAttachment.clearValue = { .depthStencil = { 1.0f, 0 } };
+		//depthAttachment.clearValue = clearValue;
+		
 
 		VkRenderingInfo renderInfo = vkinit::rendering_info(swapchain.extent, &colorAttachment, &depthAttachment);
 		vkCmdBeginRendering(cmd, &renderInfo);
@@ -586,14 +589,14 @@ namespace tde {
 		plane.Draw();
 
 		glm::mat4 model2 = glm::mat4(1.0f);
-		model2 = glm::translate(model2, { .2, 0, 8 });
+		model2 = glm::translate(model2, { .6, 0, 8 });
 		model2 = glm::rotate(model2, 3.0f, { 0,1,0 }); // rotate around the y axis
 		vkCmdPushConstants(cmd, trianglePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4_t), &model2);
 
 		plane.Draw();
 
 		glm::mat4 model3 = glm::mat4(1.0f);
-		model3 = glm::translate(model3, { 0, 0.2, 4 });
+		model3 = glm::translate(model3, { 0, .7, 4 });
 		model3 = glm::rotate(model3, 70.0f, { 1,1,0 }); // rotate around the y axis
 		vkCmdPushConstants(cmd, trianglePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4_t), &model3);
 
