@@ -140,6 +140,7 @@
     <ClInclude Include="Descriptors.h" />
     <ClInclude Include="Device.h" />
     <ClInclude Include="init_helper.h" />
+    <ClInclude Include="LineRenderer.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="obj_loader.h" />
     <ClInclude Include="Pipeline.h" />
@@ -156,6 +157,7 @@
     <ClCompile Include="Descriptors.cpp" />
     <ClCompile Include="Device.cpp" />
     <ClCompile Include="init_helper.cpp" />
+    <ClCompile Include="LineRenderer.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="Pipeline.cpp" />

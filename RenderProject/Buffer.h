@@ -7,9 +7,14 @@
 class Buffer
 {
 public:
-	VkBuffer buffer;
-	VkDeviceMemory deviceMemory;
-	VkDeviceSize size;
+	VkBuffer buffer = VK_NULL_HANDLE;
+	VkDeviceMemory deviceMemory = VK_NULL_HANDLE;
+	void* mappedData = nullptr;
+	VkDeviceSize size = 0;
+
+	void SetData(const void* data, size_t size) {
+		memcpy(mappedData, data, size);
+	}
 };
 
 namespace tdebuffers {

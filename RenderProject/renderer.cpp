@@ -529,7 +529,7 @@ namespace tde {
 		VkClearValue clearValue{};
 		clearValue.color = { { 99.0f / 255.0f, 149.0f / 255.0f, 238.0f / 255.0f } };
 		clearValue.color = { { 0, 0, 0 } };
-		clearValue.depthStencil = { 0,0 };
+		clearValue.depthStencil = { 1.0f ,0 };
 
 		//dynamic rendering stuff
 		VkRenderingAttachmentInfo colorAttachment = vkinit::attachment_info(swapchain.imageViews[swapchainImageIndex], &clearValue, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -566,13 +566,18 @@ namespace tde {
 		mat4_t proj = glm::perspective(glm::radians(60.0f), 720.0f / 420.0f, 0.1f, 1000.0f); //this only change when fov or zNear/zFar changes
 		proj[1][1] *= -1; //glm is flipped (OpenGL v Vulkan up? y neg up or down?)
 	
-		glm::mat4 testmat = glm::mat4(1.0f);
 		glm::mat4 model = glm::mat4(1.0f);
 		glm::mat4 view = glm::mat4(1.0f);
 		//mat4_t model = glm::rotate()
 		model = glm::rotate(model, 60.0f, { 0,1,1 }); // rotate around the y axis
 		view = glm::translate(view, {0, 0, -10});
 		//view = glm::translate(testmat, {0,-1,10});
+		
+		
+		glm::mat4 testmat = glm::mat4(1.0f);
+		//glm::mat4 testmat =  view * proj;
+		//testmat = glm::inverse(testmat);
+		//testmat = glm::transpose(testmat);
 
 		UniformBufferObject ubo{};
 		ubo.model = testmat;
