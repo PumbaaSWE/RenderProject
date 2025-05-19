@@ -260,7 +260,8 @@ namespace tde {
 
 	void Renderer::InitDefaultPipeline() {
 		VkShaderModule triangleFragShader;
-		if (!vkutil::load_shader_module("shaders/frag.spv", device, &triangleFragShader)) {
+		auto frag = vkutil::read_file("shaders/frag.spv");
+		if (!vkutil::load_shader_module(frag, device, &triangleFragShader)) {
 			printl("Error when building the triangle fragment shader module");
 		}
 		else {
@@ -268,7 +269,8 @@ namespace tde {
 		}
 
 		VkShaderModule triangleVertexShader;
-		if (!vkutil::load_shader_module("shaders/vert.spv", device, &triangleVertexShader)) {
+		auto vert = vkutil::read_file("shaders/vert.spv");
+		if (!vkutil::load_shader_module(vert, device, &triangleVertexShader)) {
 			printl("Error when building the triangle vertex shader module");
 		}
 		else {
@@ -531,6 +533,7 @@ namespace tde {
 
 		//dynamic rendering stuff
 		VkRenderingAttachmentInfo colorAttachment = vkinit::attachment_info(swapchain.imageViews[swapchainImageIndex], &clearValue, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		colorAttachment.clearValue = { .color {0,0,0} };
 		//VkRenderingAttachmentInfo depthAttachment = vkinit::attachment_info(depthImageView, &clearDepthValue, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
 		VkRenderingAttachmentInfo depthAttachment = vkinit::depth_attachment_info(depthImageView, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
 		depthAttachment.clearValue = { .depthStencil = { 1.0f, 0 } };

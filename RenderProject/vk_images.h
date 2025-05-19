@@ -1,5 +1,6 @@
 #pragma once
 #include "vk_init.h"
+#include <span>
 
 namespace vkutil
 {
@@ -10,7 +11,8 @@ namespace vkutil
 
 namespace vkutil 
 {
-    bool load_shader_module(const char* filePath, VkDevice device, VkShaderModule* outShaderModule);
+    std::vector<char> read_file(const char* filePath);
+    bool load_shader_module(const std::span<char> data, VkDevice device, VkShaderModule* outShaderModule);
 }
 
 #ifndef  VK_IMAGES_IMPLEMENTATION
@@ -68,22 +70,18 @@ void vkutil::transition_image(VkCommandBuffer cmd, VkImage image, VkImageLayout 
 }
 
 namespace vkutil {
-    bool load_shader_module(const char* filePath, VkDevice device, VkShaderModule* outShaderModule)
-    {
-        // open the file. With cursor at the end
+
+    std::vector<char> read_file(const char* filePath) {
         std::ifstream file(filePath, std::ios::ate | std::ios::binary);
 
         if (!file.is_open()) {
-            return false;
+            //return nullptr;
+            throw std::runtime_error("failed to open file!");
         }
 
-        // find what the size of the file is by looking up the location of the cursor
-        // because the cursor is at the end, it gives the size directly in bytes
         size_t fileSize = (size_t)file.tellg();
 
-        // spirv expects the buffer to be on uint32, so make sure to reserve a int
-        // vector big enough for the entire file
-        std::vector<uint32_t> buffer(fileSize / sizeof(uint32_t));
+        std::vector<char> buffer(fileSize);
 
         // put file cursor at beginning
         file.seekg(0);
@@ -94,6 +92,12 @@ namespace vkutil {
         // now that the file is loaded into the buffer, we can close it
         file.close();
 
+        return buffer;
+    }
+
+    bool load_shader_module(const std::span<char> data, VkDevice device, VkShaderModule* outShaderModule)
+    {
+
         // create a new shader module, using the buffer we loaded
         VkShaderModuleCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -101,8 +105,8 @@ namespace vkutil {
 
         // codeSize has to be in bytes, so multply the ints in the buffer by size of
         // int to know the real size of the buffer
-        createInfo.codeSize = buffer.size() * sizeof(uint32_t);
-        createInfo.pCode = buffer.data();
+        createInfo.codeSize = data.size();
+        createInfo.pCode = reinterpret_cast<const uint32_t*>(data.data());
 
         // check that the creation goes well.
         VkShaderModule shaderModule;

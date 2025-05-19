@@ -60,6 +60,9 @@
     <ClInclude Include="LineRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="tdeTopDogEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Window.cpp">
