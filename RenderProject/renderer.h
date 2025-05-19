@@ -64,6 +64,7 @@ namespace tde{
         VkQueue presentQueue = VK_NULL_HANDLE;
 
         VkExtent2D swapchainExtent{};
+        uint32_t swapchainImageIndex;
         //VkSwapchainKHR swapchain = VK_NULL_HANDLE;
 
         //std::vector<VkImage> swapchainImages;
@@ -136,7 +137,9 @@ namespace tde{
 		void Create(std::vector<void*> args, int width, int height);
 
         void BeginFrame();
-
+        void EndFrame();
+        void SetUniformBuffer(mat4_t a, mat4_t view, mat4_t proj);
+        void WaitIdle();
         void SetViewport(int width, int height);
 
         VkCommandBuffer& GetCommandBuffer();

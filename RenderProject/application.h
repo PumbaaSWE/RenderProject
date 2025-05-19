@@ -162,11 +162,11 @@ namespace tde {
 		bool drawFrame = false;
 		bool running = false;
 		std::unique_ptr<Platform> platform;
-		std::unique_ptr<Renderer> renderer;
 
 		//std::function<void(int, int)> callback;
 
 	public:
+		std::unique_ptr<Renderer> renderer;
 		std::string appName = "App Name Default";
 
 		Application();
@@ -353,6 +353,7 @@ namespace tde {
 
 			Render(deltaTime, lag / Time::fixedDeltaTime);
 
+			renderer->EndFrame();
 			//renderer->Present();
 
 			// update title bar and compute FPS - swiped from olcPixelGameEngine...
@@ -369,7 +370,7 @@ namespace tde {
 
 
 		}
-		//renderer->WaitIdle();
+		renderer->WaitIdle();
 		Cleanup();
 	}
 

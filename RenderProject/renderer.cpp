@@ -12,7 +12,6 @@
 
 namespace tde {
 
-	Model plane;
 	inline void vk_check(VkResult err, const char* msg = "Default") {
 		if (err) {
 			std::cout << msg << " error code: " << err << std::endl;
@@ -143,8 +142,7 @@ namespace tde {
 		//}
 
 
-		plane = Model(this, Model::cube_verts, Model::cube_indices);
-		mainDeletionQueue.push_function([&]() {plane.Destroy(); });
+		
 
 
 	}
@@ -468,7 +466,7 @@ namespace tde {
 	VkCommandBuffer& Renderer::GetCommandBuffer() {
 		return get_current_frame().mainCommandBuffer;
 	}
-	uint32_t swapchainImageIndex;
+	
 	void Renderer::BeginFrame() {
 
 		if (resize_requested) {
@@ -562,52 +560,14 @@ namespace tde {
 
 		//printl("extent: ", swapchain.extent.width, ", ", swapchain.extent.height);
 
-		//Set and fill uniformBuffers
-		mat4_t proj = glm::perspective(glm::radians(60.0f), 720.0f / 420.0f, 0.1f, 1000.0f); //this only change when fov or zNear/zFar changes
-		proj[1][1] *= -1; //glm is flipped (OpenGL v Vulkan up? y neg up or down?)
+
+
+
+
+	}
 	
-		glm::mat4 model = glm::mat4(1.0f);
-		glm::mat4 view = glm::mat4(1.0f);
-		//mat4_t model = glm::rotate()
-		model = glm::rotate(model, 60.0f, { 0,1,1 }); // rotate around the y axis
-		view = glm::translate(view, {0, 0, -10});
-		//view = glm::translate(testmat, {0,-1,10});
-		
-		
-		glm::mat4 testmat = glm::mat4(1.0f);
-		//glm::mat4 testmat =  view * proj;
-		//testmat = glm::inverse(testmat);
-		//testmat = glm::transpose(testmat);
-
-		UniformBufferObject ubo{};
-		ubo.model = testmat;
-		ubo.view = view;
-		ubo.proj = proj;
-
-		memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
-		vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, trianglePipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
-
-
-		//PushConstants
-		vkCmdPushConstants(cmd, trianglePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4_t), &model);
-
-		plane.Draw();
-
-		glm::mat4 model2 = glm::mat4(1.0f);
-		model2 = glm::translate(model2, { .6, 0, 8 });
-		model2 = glm::rotate(model2, 3.0f, { 0,1,0 }); // rotate around the y axis
-		vkCmdPushConstants(cmd, trianglePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4_t), &model2);
-
-		plane.Draw();
-
-		glm::mat4 model3 = glm::mat4(1.0f);
-		model3 = glm::translate(model3, { 0, .7, 4 });
-		model3 = glm::rotate(model3, 70.0f, { 1,1,0 }); // rotate around the y axis
-		vkCmdPushConstants(cmd, trianglePipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4_t), &model3);
-
-		plane.Draw();
-
-
+	void Renderer::EndFrame() {
+		VkCommandBuffer cmd = get_current_frame().mainCommandBuffer;
 		vkCmdEndRendering(cmd);
 
 		vkutil::transition_image(cmd, swapchain.images[swapchainImageIndex], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
@@ -637,7 +597,21 @@ namespace tde {
 		currentFrame++;
 		if (currentFrame == MAX_FRAMES_IN_FLIGHT) currentFrame = 0;
 	}
-	
+
+	void Renderer::SetUniformBuffer(mat4_t a, mat4_t view, mat4_t proj) {
+		UniformBufferObject ubo{};
+		ubo.model = a;
+		ubo.view = view;
+		ubo.proj = proj;
+
+		memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
+		VkCommandBuffer cmd = get_current_frame().mainCommandBuffer;
+		vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, trianglePipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
+	}
+
+	void Renderer::WaitIdle() {
+		vkDeviceWaitIdle(device);
+	}
 
 
 	void Renderer::CreateVertexBuffer(std::vector<Vertex>& vertices, VkBuffer& vertexBuffer, VkDeviceMemory& vertexBufferMemory) {
