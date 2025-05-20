@@ -65,6 +65,19 @@ namespace tde {
 		X,
 		Y,
 		Z,
+		Alpha0,
+		Alpha1,
+		Alpha2,
+		Alpha3,
+		Alpha4,
+		Alpha5,
+		Alpha6,
+		Alpha7,
+		Alpha8,
+		Alpha9,
+		UP, DOWN, LEFT, RIGHT,
+		SPACE, TAB, SHIFT, CTRL, INS, DEL, HOME, END, PGUP, PGDN,
+		BACK, ESCAPE, RETURN, ENTER, PAUSE, SCROLL,
 		Mouse0, //left
 		Mouse1,	//right... should be middle?
 		Mouse2,	//middle
@@ -441,6 +454,16 @@ namespace tde {
 		keyMap[0x55] = KeyCode::U; keyMap[0x56] = KeyCode::V; keyMap[0x57] = KeyCode::W; keyMap[0x58] = KeyCode::X; keyMap[0x59] = KeyCode::Y;
 		keyMap[0x5A] = KeyCode::Z;
 
+		keyMap[0x30] = KeyCode::Alpha0; keyMap[0x31] = KeyCode::Alpha1; keyMap[0x32] = KeyCode::Alpha2; keyMap[0x33] = KeyCode::Alpha3; keyMap[0x34] = KeyCode::Alpha4;
+		keyMap[0x35] = KeyCode::Alpha5; keyMap[0x36] = KeyCode::Alpha6; keyMap[0x37] = KeyCode::Alpha7; keyMap[0x38] = KeyCode::Alpha8; keyMap[0x39] = KeyCode::Alpha9;
+
+
+		keyMap[VK_UP] = KeyCode::UP; keyMap[VK_DOWN] = KeyCode::DOWN; keyMap[VK_LEFT] = KeyCode::LEFT; keyMap[VK_RIGHT] = KeyCode::RIGHT; 
+
+		keyMap[VK_SPACE] = KeyCode::SPACE; keyMap[VK_TAB] = KeyCode::TAB; keyMap[VK_SHIFT] = KeyCode::SHIFT; keyMap[VK_CONTROL] = KeyCode::CTRL;
+		keyMap[VK_INSERT] = KeyCode::INS; keyMap[VK_DELETE] = KeyCode::DEL; keyMap[VK_HOME] = KeyCode::HOME;
+		keyMap[VK_END] = KeyCode::END; keyMap[VK_PRIOR] = KeyCode::PGUP; keyMap[VK_NEXT] = KeyCode::PGDN; 
+		keyMap[VK_BACK] = KeyCode::BACK; keyMap[VK_ESCAPE] = KeyCode::ESCAPE; keyMap[VK_RETURN] = KeyCode::ENTER; keyMap[VK_PAUSE] = KeyCode::PAUSE; keyMap[VK_SCROLL] = KeyCode::SCROLL; 
 
 
 		// Register the window class.

@@ -378,7 +378,9 @@ VkRenderingAttachmentInfo vkinit::attachment_info(VkImageView view, VkClearValue
 	}
 
 	return colorAttachment;
-	}
+}
+
+
 }
 
 VkRenderingInfo vkinit::rendering_info(VkExtent2D renderExtent, VkRenderingAttachmentInfo* colorAttachment, VkRenderingAttachmentInfo* depthAttachment)

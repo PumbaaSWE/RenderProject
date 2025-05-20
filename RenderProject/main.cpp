@@ -134,26 +134,26 @@ int main()
 	//return 0;
 
 
-	std::ofstream myfile;
-	myfile.open("example.txt");
+	//std::ofstream myfile;
+	//myfile.open("example.txt");
 
-	auto frag = read_file("shaders/frag.spv");
-	auto vert = read_file("shaders/vert.spv");
+	//auto frag = read_file("shaders/frag.spv");
+	//auto vert = read_file("shaders/vert.spv");
 
-	std::string s;
-	s.reserve(frag.size());
+	//std::string s;
+	//s.reserve(frag.size());
 
-	myfile << "{ ";
-	for (size_t i = 0; i < frag.size(); i++) {
-		//s.push_back(frag[i]);
-		myfile << (int)frag[i];
-		if(i < frag.size() - 1 )myfile << ", ";
-	}
-	myfile << " };";
+	//myfile << "{ ";
+	//for (size_t i = 0; i < frag.size(); i++) {
+	//	//s.push_back(frag[i]);
+	//	myfile << (int)frag[i];
+	//	if(i < frag.size() - 1 )myfile << ", ";
+	//}
+	//myfile << " };";
 
-	myfile.close();
-	
-	return 0;
+	//myfile.close();
+	//
+	//return 0;
 
 	Application1 app;
 	if (app.Create(720, 420) == tde::Success)
