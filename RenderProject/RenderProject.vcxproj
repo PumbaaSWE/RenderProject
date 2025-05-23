@@ -139,6 +139,7 @@
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="Descriptors.h" />
     <ClInclude Include="Device.h" />
+    <ClInclude Include="HeaderInfoText.h" />
     <ClInclude Include="init_helper.h" />
     <ClInclude Include="LineRenderer.h" />
     <ClInclude Include="Model.h" />
@@ -147,7 +148,6 @@
     <ClInclude Include="renderer.h" />
     <ClInclude Include="stuff.h" />
     <ClInclude Include="Swapchain.h" />
-    <ClInclude Include="tdeTopDogEngine.h" />
     <ClInclude Include="vk_images.h" />
     <ClInclude Include="vk_init.h" />
     <ClInclude Include="Window.h" />

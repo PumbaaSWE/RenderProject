@@ -564,7 +564,7 @@ namespace tde {
 		//printl("extent: ", swapchain.extent.width, ", ", swapchain.extent.height);
 
 
-
+		//vkCmdClearDepthStencilImage
 
 
 	}

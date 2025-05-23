@@ -5,7 +5,7 @@
 
 #include "Swapchain.h"
 #include "vk_init.h"
-#include "Descriptors.h"
+//#include "Descriptors.h"
 
 namespace tde{
 
@@ -97,7 +97,7 @@ namespace tde{
         std::vector<void*> uniformBuffersMapped{};
 
 
-        DescriptorAllocator globalDescriptorAllocator;
+        //DescriptorAllocator globalDescriptorAllocator;
         VkDescriptorSetLayout descriptorSetLayout{};
 
         //VkDescriptorSet _drawImageDescriptors;
@@ -139,6 +139,8 @@ namespace tde{
         void BeginFrame();
         void EndFrame();
         void SetUniformBuffer(mat4_t a, mat4_t view, mat4_t proj);
+        //void SetUniformBuffer(const void* pData, int size);
+        //void SetPushConstant(const void* pData, int size);
         void WaitIdle();
         void SetViewport(int width, int height);
 

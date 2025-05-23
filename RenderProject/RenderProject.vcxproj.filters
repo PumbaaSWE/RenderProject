@@ -60,7 +60,7 @@
     <ClInclude Include="LineRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="tdeTopDogEngine.h">
+    <ClInclude Include="HeaderInfoText.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
