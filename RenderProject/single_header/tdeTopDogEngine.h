@@ -1,4 +1,171 @@
 #pragma once
+/*
+* the big header
+*
+* To include it in multiple files create a tdeTopDogEngine.cpp file that only has the following:
+
+	#define TOP_DOG_IMPLEMENTATION
+	#include "tdeTopDogEngine.h"
+
+* Nothing else!
+* Then you can include tdeTopDogEngine.h anywhere without duplicating
+* It also improves compile times as you do not recompile the whole engine each time...
+*
+* =====HOW TO SET UP!=====
+*
+* Make Sure to have Vulkan SDK installed (https://www.lunarg.com/vulkan-sdk/)
+*
+* Make sure the Enviroment variable VULKAN_SDK is set to the installation folder
+* probably done when installing the SDK
+* in cmd: echo %VULKAN_SDK%
+* result should be something like: C:\VulkanSDK\1.3.211.0
+* if not set it in cmd: setx VULKAN_SDK "C:\VulkanSDK\1.3.211.0"
+* in PowerShell:
+* [Environment]::SetEnvironmentVariable('VULKAN_SDK','C:\VulkanSDK\1.3.211.0')
+* [Environment]::GetEnvironmentVariable('VULKAN_SDK')
+*
+* Set up Visual Studio: (Right click Your Project under Solution in Solution Explorer>Properties)
+*
+* Properties>General>C++ Language Standard
+* Select ISO C++20
+*
+* Properties>Linker>All Options>Additional Dependencies
+* Add vulkan-1.lib
+*
+* Properties>Linker>All Options>Additional Library Directories
+* Add %VULKAN_SDK%\Lib
+*
+* Properties>C/C++>All Options>Additional Include Directories
+* Add %VULKAN_SDK%\Include
+*
+*/
+
+//Example main.cpp
+/*
+#define TOP_DOG_IMPLEMENTATION
+#include "tdeTopDogEngine.h"
+
+
+class Application1 : public tde::Application
+{
+
+	float time = 0;
+	int secs = 0;
+	bool showTime = false;
+
+	tde::Model plane;
+
+
+public:
+	Application1()
+	{
+		appName = "Top Dog";
+	}
+
+	void Init() override {
+		plane = tde::Model(&GetRenderer(), tde::Model::cube_verts, tde::Model::cube_indices);
+	}
+
+
+	void FixedUpdate(float dt) override {
+
+	}
+
+
+	void Update(float dt) override {
+
+
+	}
+	void Render(float dt, float extrapolation) override {
+
+
+		mat4_t proj = glm::perspective(glm::radians(60.0f), 720.0f / 420.0f, 0.1f, 1000.0f); //this only change when fov or zNear/zFar changes
+		proj[1][1] *= -1; //glm is flipped (OpenGL v Vulkan up? y neg up or down?)
+
+		glm::mat4 view = glm::mat4(1.0f);
+		view = glm::translate(view, { 0, 0, -10 });
+
+
+		glm::mat4 identity = glm::mat4(1.0f); //this is currently not used
+		renderer->SetUniformBuffer(identity, view, proj);
+
+
+
+		glm::mat4 model = glm::mat4(1.0f);
+		model = glm::rotate(model, 60.0f, { 0,1,1 }); // rotate around the y axis
+		plane.Draw(model);
+
+		glm::mat4 model2 = glm::mat4(1.0f);
+		model2 = glm::translate(model2, { .6, 0, 8 });
+		model2 = glm::rotate(model2, 3.0f, { 0,1,0 }); // rotate around the y axis
+		plane.Draw(model2);
+
+		glm::mat4 model3 = glm::mat4(1.0f);
+		model3 = glm::translate(model3, { 0, .7, 4 });
+		model3 = glm::rotate(model3, 70.0f, { 1,1,0 }); // rotate around the y axis
+		plane.Draw(model3);
+	}
+
+};
+
+
+
+
+
+int main()
+{
+	Application1 app;
+	if (app.Create(720, 420) == tde::Success)
+		app.Start();
+	return 0;
+}
+*/
+
+/*
+	Authors
+	Jack Forsberg
+	Johannes Widén
+
+	Copyright (c) 2025 Team Alpha Top Dog Ace Squad
+	All rights reserved.
+
+	*--------------------*
+	|                    |
+	|     A cool box     |
+	|                    |
+	*--------------------*
+*/
+
+
+/*
+	Change-log
+	
+	Version 0.0
+	2025-05-19
+	- First ever test of the software as one header with Vulkan 1.3
+	- Read obj files, limitations: needs to be triangulated, contain no submeshes, less than 16000 verts, possibli some more
+	- One hardcoded pipeline
+	- Two hardecoded default shaders (vert and frag) in binary form
+	- Support to read shaders in SPRV format
+	- One default cube to render
+	- Windows support
+	
+	Version 0.1
+	2025-05-20
+	- Fixed bug with precompiled shaders were defined in the header
+	- Added authors and copyright
+
+	Version 0.2
+	2025-05-23
+	- Added more KeyCodes
+	- Added Known bugs to this 
+*/
+
+/*
+	KNOWN BUGS:
+	- Minimizing is not handled properly and validation layers freak out about it 
+*/ 
+#pragma once
 #ifndef stuff
 #define stuff
 
@@ -95,8 +262,8 @@ struct DeletionQueue
 
 
 
-#endif#pragma once
-#include "stuff.h"
+#endif 
+#pragma once
 
 /*
 	I dont like this file, the name is wrong, it include stuff that is barly functioning...
@@ -275,13 +442,13 @@ namespace tde {
 
 
 
-#endif#pragma once
+#endif 
+#pragma once
 
 
 #ifndef vk_init
 #define vk_init
 
-#include "stuff.h"
 //command pool
 namespace vkinit {
 	VkCommandPoolCreateInfo command_pool_create_info(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags = 0);
@@ -342,7 +509,24 @@ namespace vkinit {
 
 
 
-#endif // !vk_init#pragma once
+#endif // !vk_init 
+#pragma once
+#include <span>
+
+namespace vkutil
+{
+    void transition_image(VkCommandBuffer cmd, VkImage image, VkImageLayout currentLayout, VkImageLayout newLayout);
+    VkFormat FindSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+
+}
+
+namespace vkutil 
+{
+    std::vector<char> read_file(const char* filePath);
+    bool load_shader_module(const std::span<char> data, VkDevice device, VkShaderModule* outShaderModule);
+}
+ 
+#pragma once
 #include <string>
 #include <sstream>
 #include <vector>
@@ -500,8 +684,8 @@ static bool LoadFromFile(const std::string& fileName, std::vector<Vertex>& verti
 
 	return true;
 }
-}
-#include "stuff.h"
+} 
+
 
 //Pipeline
 namespace tde
@@ -580,9 +764,8 @@ namespace tde {
 
 	};
 
-}#pragma once
-#include "init_helper.h"
-#include "stuff.h"
+} 
+#pragma once
 
 namespace tde {
 	class Swapchain
@@ -612,14 +795,11 @@ namespace tde {
 		VkSurfaceKHR surface = VK_NULL_HANDLE;
 	};
 }
+ 
 #ifndef RENDERER
 #define RENDERER
 
-#include "stuff.h"
 
-#include "Swapchain.h"
-#include "vk_init.h"
-//#include "Descriptors.h"
 
 namespace tde{
 
@@ -795,8 +975,8 @@ namespace tde{
 }
 
 
-#endif#pragma once
-#include "renderer.h"
+#endif 
+#pragma once
 
 namespace tde {
 	class Model {
@@ -845,7 +1025,8 @@ namespace tde {
 	
 
 
-}#pragma once
+} 
+#pragma once
 #ifndef GAME_ENGINE
 #define GAME_ENGINE
 
@@ -858,7 +1039,6 @@ namespace tde {
 #include <string>
 #include <cassert>
 
-#include "renderer.h"
 
 //mybe use this?
 #define PRINT_TO_CONSOLE
@@ -1120,8 +1300,8 @@ namespace tde {
 
 
 #endif // !GAME_ENGINE 
-#ifdef TDE_IMPLEMENTATION 
-#include "init_helper.h"
+ 
+#ifdef TOP_DOG_IMPLEMENTATION 
 
 namespace tde {
 	auto GetSupportedInstanceExtensions() {
@@ -1586,7 +1766,7 @@ namespace tde {
 
 		return device;
 	}
-}#include "vk_init.h"
+} 
 
 namespace vkinit {
 	VkImageCreateInfo image_create_info(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent)
@@ -1928,8 +2108,112 @@ VkRenderingAttachmentInfo vkinit::depth_attachment_info(VkImageView view, VkImag
 
 	return depthAttachment;
 }
-#include "vk_init.h"
-#include "Pipeline.h"
+ 
+
+
+
+VkFormat vkutil::FindSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
+    for (VkFormat format : candidates) {
+        VkFormatProperties props;
+        vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+
+        if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+            return format;
+        }
+        else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+            return format;
+        }
+
+        throw std::runtime_error("failed to find supported format!");
+    }
+    return VK_FORMAT_UNDEFINED;//to remove a warning, maybe throw?
+}
+
+void vkutil::transition_image(VkCommandBuffer cmd, VkImage image, VkImageLayout currentLayout, VkImageLayout newLayout)
+{
+    VkImageMemoryBarrier2 imageBarrier{ .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2 };
+    imageBarrier.pNext = nullptr;
+
+    imageBarrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    imageBarrier.srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT;
+    imageBarrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    imageBarrier.dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT;
+
+    imageBarrier.oldLayout = currentLayout;
+    imageBarrier.newLayout = newLayout;
+
+
+    VkImageAspectFlags aspectMask = 0;
+    aspectMask |= (newLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0;
+    aspectMask |= (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+
+    //if (vkutil::HasStencilComponent(format)) {
+    //    aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+    //}
+
+
+    imageBarrier.subresourceRange = vkinit::image_subresource_range(aspectMask);
+    imageBarrier.image = image;
+
+    VkDependencyInfo depInfo{};
+    depInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+    depInfo.pNext = nullptr;
+
+    depInfo.imageMemoryBarrierCount = 1;
+    depInfo.pImageMemoryBarriers = &imageBarrier;
+
+    vkCmdPipelineBarrier2(cmd, &depInfo);
+}
+
+namespace vkutil {
+
+    std::vector<char> read_file(const char* filePath) {
+        std::ifstream file(filePath, std::ios::ate | std::ios::binary);
+
+        if (!file.is_open()) {
+            //return nullptr;
+            throw std::runtime_error("failed to open file!");
+        }
+
+        size_t fileSize = (size_t)file.tellg();
+
+        std::vector<char> buffer(fileSize);
+
+        // put file cursor at beginning
+        file.seekg(0);
+
+        // load the entire file into the buffer
+        file.read((char*)buffer.data(), fileSize);
+
+        // now that the file is loaded into the buffer, we can close it
+        file.close();
+
+        return buffer;
+    }
+
+    bool load_shader_module(const std::span<char> data, VkDevice device, VkShaderModule* outShaderModule)
+    {
+
+        // create a new shader module, using the buffer we loaded
+        VkShaderModuleCreateInfo createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        createInfo.pNext = nullptr;
+
+        // codeSize has to be in bytes, so multply the ints in the buffer by size of
+        // int to know the real size of the buffer
+        createInfo.codeSize = data.size();
+        createInfo.pCode = reinterpret_cast<const uint32_t*>(data.data());
+
+        // check that the creation goes well.
+        VkShaderModule shaderModule;
+        if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+            return false;
+        }
+        *outShaderModule = shaderModule;
+        return true;
+    }
+
+} 
 
 //PipelineLayoutBuilder
 namespace tde
@@ -2206,7 +2490,7 @@ namespace tde {
 		return *this;
 	}
 
-}#include "Swapchain.h"
+} 
 
 namespace tde {
 	Swapchain::Swapchain()
@@ -2352,13 +2636,7 @@ namespace tde {
 			vkDestroyImageView(device, imageViews[i], nullptr);
 		}
 	}
-}#include "renderer.h"
-#include "init_helper.h"
-#include "vk_init.h"
-#include "vk_images.h"
-#include "Pipeline.h"
-#include "Model.h"
-#include "obj_loader.h"
+} 
 
 //this spart below should be copied with implementation guard once we get to it
 
@@ -2612,18 +2890,25 @@ namespace tde {
 		InitDefaultPipeline();
 	}
 
+
+	//wrap in a namespace
+	std::vector<char> vert_shader_data{ 3, 2, 35, 7, 0, 0, 1, 0, 10, 0, 13, 0, 71, 0, 0, 0, 0, 0, 0, 0, 17, 0, 2, 0, 1, 0, 0, 0, 11, 0, 6, 0, 1, 0, 0, 0, 71, 76, 83, 76, 46, 115, 116, 100, 46, 52, 53, 48, 0, 0, 0, 0, 14, 0, 3, 0, 0, 0, 0, 0, 1, 0, 0, 0, 15, 0, 9, 0, 0, 0, 0, 0, 4, 0, 0, 0, 109, 97, 105, 110, 0, 0, 0, 0, 13, 0, 0, 0, 37, 0, 0, 0, 60, 0, 0, 0, 68, 0, 0, 0, 3, 0, 3, 0, 2, 0, 0, 0, -62, 1, 0, 0, 4, 0, 10, 0, 71, 76, 95, 71, 79, 79, 71, 76, 69, 95, 99, 112, 112, 95, 115, 116, 121, 108, 101, 95, 108, 105, 110, 101, 95, 100, 105, 114, 101, 99, 116, 105, 118, 101, 0, 0, 4, 0, 8, 0, 71, 76, 95, 71, 79, 79, 71, 76, 69, 95, 105, 110, 99, 108, 117, 100, 101, 95, 100, 105, 114, 101, 99, 116, 105, 118, 101, 0, 5, 0, 4, 0, 4, 0, 0, 0, 109, 97, 105, 110, 0, 0, 0, 0, 5, 0, 6, 0, 11, 0, 0, 0, 103, 108, 95, 80, 101, 114, 86, 101, 114, 116, 101, 120, 0, 0, 0, 0, 6, 0, 6, 0, 11, 0, 0, 0, 0, 0, 0, 0, 103, 108, 95, 80, 111, 115, 105, 116, 105, 111, 110, 0, 6, 0, 7, 0, 11, 0, 0, 0, 1, 0, 0, 0, 103, 108, 95, 80, 111, 105, 110, 116, 83, 105, 122, 101, 0, 0, 0, 0, 6, 0, 7, 0, 11, 0, 0, 0, 2, 0, 0, 0, 103, 108, 95, 67, 108, 105, 112, 68, 105, 115, 116, 97, 110, 99, 101, 0, 6, 0, 7, 0, 11, 0, 0, 0, 3, 0, 0, 0, 103, 108, 95, 67, 117, 108, 108, 68, 105, 115, 116, 97, 110, 99, 101, 0, 5, 0, 3, 0, 13, 0, 0, 0, 0, 0, 0, 0, 5, 0, 7, 0, 17, 0, 0, 0, 85, 110, 105, 102, 111, 114, 109, 66, 117, 102, 102, 101, 114, 79, 98, 106, 101, 99, 116, 0, 6, 0, 5, 0, 17, 0, 0, 0, 0, 0, 0, 0, 110, 111, 114, 109, 97, 108, 0, 0, 6, 0, 5, 0, 17, 0, 0, 0, 1, 0, 0, 0, 118, 105, 101, 119, 0, 0, 0, 0, 6, 0, 5, 0, 17, 0, 0, 0, 2, 0, 0, 0, 112, 114, 111, 106, 0, 0, 0, 0, 5, 0, 3, 0, 19, 0, 0, 0, 117, 98, 111, 0, 5, 0, 6, 0, 28, 0, 0, 0, 80, 117, 115, 104, 67, 111, 110, 115, 116, 97, 110, 116, 0, 0, 0, 0, 6, 0, 5, 0, 28, 0, 0, 0, 0, 0, 0, 0, 109, 111, 100, 101, 108, 0, 0, 0, 5, 0, 3, 0, 30, 0, 0, 0, 112, 99, 0, 0, 5, 0, 5, 0, 37, 0, 0, 0, 105, 110, 80, 111, 115, 105, 116, 105, 111, 110, 0, 0, 5, 0, 3, 0, 48, 0, 0, 0, 110, 109, 0, 0, 5, 0, 3, 0, 58, 0, 0, 0, 110, 0, 0, 0, 5, 0, 5, 0, 60, 0, 0, 0, 105, 110, 78, 111, 114, 109, 97, 108, 0, 0, 0, 0, 5, 0, 4, 0, 68, 0, 0, 0, 110, 111, 114, 109, 97, 108, 0, 0, 72, 0, 5, 0, 11, 0, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 72, 0, 5, 0, 11, 0, 0, 0, 1, 0, 0, 0, 11, 0, 0, 0, 1, 0, 0, 0, 72, 0, 5, 0, 11, 0, 0, 0, 2, 0, 0, 0, 11, 0, 0, 0, 3, 0, 0, 0, 72, 0, 5, 0, 11, 0, 0, 0, 3, 0, 0, 0, 11, 0, 0, 0, 4, 0, 0, 0, 71, 0, 3, 0, 11, 0, 0, 0, 2, 0, 0, 0, 72, 0, 4, 0, 17, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 72, 0, 5, 0, 17, 0, 0, 0, 0, 0, 0, 0, 35, 0, 0, 0, 0, 0, 0, 0, 72, 0, 5, 0, 17, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 16, 0, 0, 0, 72, 0, 4, 0, 17, 0, 0, 0, 1, 0, 0, 0, 5, 0, 0, 0, 72, 0, 5, 0, 17, 0, 0, 0, 1, 0, 0, 0, 35, 0, 0, 0, 64, 0, 0, 0, 72, 0, 5, 0, 17, 0, 0, 0, 1, 0, 0, 0, 7, 0, 0, 0, 16, 0, 0, 0, 72, 0, 4, 0, 17, 0, 0, 0, 2, 0, 0, 0, 5, 0, 0, 0, 72, 0, 5, 0, 17, 0, 0, 0, 2, 0, 0, 0, 35, 0, 0, 0, -128, 0, 0, 0, 72, 0, 5, 0, 17, 0, 0, 0, 2, 0, 0, 0, 7, 0, 0, 0, 16, 0, 0, 0, 71, 0, 3, 0, 17, 0, 0, 0, 2, 0, 0, 0, 71, 0, 4, 0, 19, 0, 0, 0, 34, 0, 0, 0, 0, 0, 0, 0, 71, 0, 4, 0, 19, 0, 0, 0, 33, 0, 0, 0, 0, 0, 0, 0, 72, 0, 4, 0, 28, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 72, 0, 5, 0, 28, 0, 0, 0, 0, 0, 0, 0, 35, 0, 0, 0, 0, 0, 0, 0, 72, 0, 5, 0, 28, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 16, 0, 0, 0, 71, 0, 3, 0, 28, 0, 0, 0, 2, 0, 0, 0, 71, 0, 4, 0, 37, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 71, 0, 4, 0, 60, 0, 0, 0, 30, 0, 0, 0, 1, 0, 0, 0, 71, 0, 4, 0, 68, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 19, 0, 2, 0, 2, 0, 0, 0, 33, 0, 3, 0, 3, 0, 0, 0, 2, 0, 0, 0, 22, 0, 3, 0, 6, 0, 0, 0, 32, 0, 0, 0, 23, 0, 4, 0, 7, 0, 0, 0, 6, 0, 0, 0, 4, 0, 0, 0, 21, 0, 4, 0, 8, 0, 0, 0, 32, 0, 0, 0, 0, 0, 0, 0, 43, 0, 4, 0, 8, 0, 0, 0, 9, 0, 0, 0, 1, 0, 0, 0, 28, 0, 4, 0, 10, 0, 0, 0, 6, 0, 0, 0, 9, 0, 0, 0, 30, 0, 6, 0, 11, 0, 0, 0, 7, 0, 0, 0, 6, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0, 32, 0, 4, 0, 12, 0, 0, 0, 3, 0, 0, 0, 11, 0, 0, 0, 59, 0, 4, 0, 12, 0, 0, 0, 13, 0, 0, 0, 3, 0, 0, 0, 21, 0, 4, 0, 14, 0, 0, 0, 32, 0, 0, 0, 1, 0, 0, 0, 43, 0, 4, 0, 14, 0, 0, 0, 15, 0, 0, 0, 0, 0, 0, 0, 24, 0, 4, 0, 16, 0, 0, 0, 7, 0, 0, 0, 4, 0, 0, 0, 30, 0, 5, 0, 17, 0, 0, 0, 16, 0, 0, 0, 16, 0, 0, 0, 16, 0, 0, 0, 32, 0, 4, 0, 18, 0, 0, 0, 2, 0, 0, 0, 17, 0, 0, 0, 59, 0, 4, 0, 18, 0, 0, 0, 19, 0, 0, 0, 2, 0, 0, 0, 43, 0, 4, 0, 14, 0, 0, 0, 20, 0, 0, 0, 2, 0, 0, 0, 32, 0, 4, 0, 21, 0, 0, 0, 2, 0, 0, 0, 16, 0, 0, 0, 43, 0, 4, 0, 14, 0, 0, 0, 24, 0, 0, 0, 1, 0, 0, 0, 30, 0, 3, 0, 28, 0, 0, 0, 16, 0, 0, 0, 32, 0, 4, 0, 29, 0, 0, 0, 9, 0, 0, 0, 28, 0, 0, 0, 59, 0, 4, 0, 29, 0, 0, 0, 30, 0, 0, 0, 9, 0, 0, 0, 32, 0, 4, 0, 31, 0, 0, 0, 9, 0, 0, 0, 16, 0, 0, 0, 23, 0, 4, 0, 35, 0, 0, 0, 6, 0, 0, 0, 3, 0, 0, 0, 32, 0, 4, 0, 36, 0, 0, 0, 1, 0, 0, 0, 35, 0, 0, 0, 59, 0, 4, 0, 36, 0, 0, 0, 37, 0, 0, 0, 1, 0, 0, 0, 43, 0, 4, 0, 6, 0, 0, 0, 39, 0, 0, 0, 0, 0, -128, 63, 32, 0, 4, 0, 45, 0, 0, 0, 3, 0, 0, 0, 7, 0, 0, 0, 32, 0, 4, 0, 47, 0, 0, 0, 7, 0, 0, 0, 16, 0, 0, 0, 32, 0, 4, 0, 57, 0, 0, 0, 7, 0, 0, 0, 7, 0, 0, 0, 59, 0, 4, 0, 36, 0, 0, 0, 60, 0, 0, 0, 1, 0, 0, 0, 32, 0, 4, 0, 67, 0, 0, 0, 3, 0, 0, 0, 35, 0, 0, 0, 59, 0, 4, 0, 67, 0, 0, 0, 68, 0, 0, 0, 3, 0, 0, 0, 54, 0, 5, 0, 2, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, -8, 0, 2, 0, 5, 0, 0, 0, 59, 0, 4, 0, 47, 0, 0, 0, 48, 0, 0, 0, 7, 0, 0, 0, 59, 0, 4, 0, 57, 0, 0, 0, 58, 0, 0, 0, 7, 0, 0, 0, 65, 0, 5, 0, 21, 0, 0, 0, 22, 0, 0, 0, 19, 0, 0, 0, 20, 0, 0, 0, 61, 0, 4, 0, 16, 0, 0, 0, 23, 0, 0, 0, 22, 0, 0, 0, 65, 0, 5, 0, 21, 0, 0, 0, 25, 0, 0, 0, 19, 0, 0, 0, 24, 0, 0, 0, 61, 0, 4, 0, 16, 0, 0, 0, 26, 0, 0, 0, 25, 0, 0, 0, -110, 0, 5, 0, 16, 0, 0, 0, 27, 0, 0, 0, 23, 0, 0, 0, 26, 0, 0, 0, 65, 0, 5, 0, 31, 0, 0, 0, 32, 0, 0, 0, 30, 0, 0, 0, 15, 0, 0, 0, 61, 0, 4, 0, 16, 0, 0, 0, 33, 0, 0, 0, 32, 0, 0, 0, -110, 0, 5, 0, 16, 0, 0, 0, 34, 0, 0, 0, 27, 0, 0, 0, 33, 0, 0, 0, 61, 0, 4, 0, 35, 0, 0, 0, 38, 0, 0, 0, 37, 0, 0, 0, 81, 0, 5, 0, 6, 0, 0, 0, 40, 0, 0, 0, 38, 0, 0, 0, 0, 0, 0, 0, 81, 0, 5, 0, 6, 0, 0, 0, 41, 0, 0, 0, 38, 0, 0, 0, 1, 0, 0, 0, 81, 0, 5, 0, 6, 0, 0, 0, 42, 0, 0, 0, 38, 0, 0, 0, 2, 0, 0, 0, 80, 0, 7, 0, 7, 0, 0, 0, 43, 0, 0, 0, 40, 0, 0, 0, 41, 0, 0, 0, 42, 0, 0, 0, 39, 0, 0, 0, -111, 0, 5, 0, 7, 0, 0, 0, 44, 0, 0, 0, 34, 0, 0, 0, 43, 0, 0, 0, 65, 0, 5, 0, 45, 0, 0, 0, 46, 0, 0, 0, 13, 0, 0, 0, 15, 0, 0, 0, 62, 0, 3, 0, 46, 0, 0, 0, 44, 0, 0, 0, 65, 0, 5, 0, 21, 0, 0, 0, 49, 0, 0, 0, 19, 0, 0, 0, 24, 0, 0, 0, 61, 0, 4, 0, 16, 0, 0, 0, 50, 0, 0, 0, 49, 0, 0, 0, 65, 0, 5, 0, 31, 0, 0, 0, 51, 0, 0, 0, 30, 0, 0, 0, 15, 0, 0, 0, 61, 0, 4, 0, 16, 0, 0, 0, 52, 0, 0, 0, 51, 0, 0, 0, -110, 0, 5, 0, 16, 0, 0, 0, 53, 0, 0, 0, 50, 0, 0, 0, 52, 0, 0, 0, 12, 0, 6, 0, 16, 0, 0, 0, 54, 0, 0, 0, 1, 0, 0, 0, 34, 0, 0, 0, 53, 0, 0, 0, 62, 0, 3, 0, 48, 0, 0, 0, 54, 0, 0, 0, 61, 0, 4, 0, 16, 0, 0, 0, 55, 0, 0, 0, 48, 0, 0, 0, 84, 0, 4, 0, 16, 0, 0, 0, 56, 0, 0, 0, 55, 0, 0, 0, 62, 0, 3, 0, 48, 0, 0, 0, 56, 0, 0, 0, 61, 0, 4, 0, 16, 0, 0, 0, 59, 0, 0, 0, 48, 0, 0, 0, 61, 0, 4, 0, 35, 0, 0, 0, 61, 0, 0, 0, 60, 0, 0, 0, 81, 0, 5, 0, 6, 0, 0, 0, 62, 0, 0, 0, 61, 0, 0, 0, 0, 0, 0, 0, 81, 0, 5, 0, 6, 0, 0, 0, 63, 0, 0, 0, 61, 0, 0, 0, 1, 0, 0, 0, 81, 0, 5, 0, 6, 0, 0, 0, 64, 0, 0, 0, 61, 0, 0, 0, 2, 0, 0, 0, 80, 0, 7, 0, 7, 0, 0, 0, 65, 0, 0, 0, 62, 0, 0, 0, 63, 0, 0, 0, 64, 0, 0, 0, 39, 0, 0, 0, -111, 0, 5, 0, 7, 0, 0, 0, 66, 0, 0, 0, 59, 0, 0, 0, 65, 0, 0, 0, 62, 0, 3, 0, 58, 0, 0, 0, 66, 0, 0, 0, 61, 0, 4, 0, 7, 0, 0, 0, 69, 0, 0, 0, 58, 0, 0, 0, 79, 0, 8, 0, 35, 0, 0, 0, 70, 0, 0, 0, 69, 0, 0, 0, 69, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 62, 0, 3, 0, 68, 0, 0, 0, 70, 0, 0, 0, -3, 0, 1, 0, 56, 0, 1, 0 };
+	std::vector<char> frag_shader_data{ 3, 2, 35, 7, 0, 0, 1, 0, 10, 0, 13, 0, 30, 0, 0, 0, 0, 0, 0, 0, 17, 0, 2, 0, 1, 0, 0, 0, 11, 0, 6, 0, 1, 0, 0, 0, 71, 76, 83, 76, 46, 115, 116, 100, 46, 52, 53, 48, 0, 0, 0, 0, 14, 0, 3, 0, 0, 0, 0, 0, 1, 0, 0, 0, 15, 0, 7, 0, 4, 0, 0, 0, 4, 0, 0, 0, 109, 97, 105, 110, 0, 0, 0, 0, 15, 0, 0, 0, 20, 0, 0, 0, 16, 0, 3, 0, 4, 0, 0, 0, 7, 0, 0, 0, 3, 0, 3, 0, 2, 0, 0, 0, -62, 1, 0, 0, 4, 0, 10, 0, 71, 76, 95, 71, 79, 79, 71, 76, 69, 95, 99, 112, 112, 95, 115, 116, 121, 108, 101, 95, 108, 105, 110, 101, 95, 100, 105, 114, 101, 99, 116, 105, 118, 101, 0, 0, 4, 0, 8, 0, 71, 76, 95, 71, 79, 79, 71, 76, 69, 95, 105, 110, 99, 108, 117, 100, 101, 95, 100, 105, 114, 101, 99, 116, 105, 118, 101, 0, 5, 0, 4, 0, 4, 0, 0, 0, 109, 97, 105, 110, 0, 0, 0, 0, 5, 0, 5, 0, 9, 0, 0, 0, 108, 105, 103, 104, 116, 68, 105, 114, 0, 0, 0, 0, 5, 0, 4, 0, 13, 0, 0, 0, 110, 111, 114, 109, 0, 0, 0, 0, 5, 0, 4, 0, 15, 0, 0, 0, 110, 111, 114, 109, 97, 108, 0, 0, 5, 0, 5, 0, 20, 0, 0, 0, 111, 117, 116, 67, 111, 108, 111, 114, 0, 0, 0, 0, 71, 0, 4, 0, 15, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 71, 0, 4, 0, 20, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 19, 0, 2, 0, 2, 0, 0, 0, 33, 0, 3, 0, 3, 0, 0, 0, 2, 0, 0, 0, 22, 0, 3, 0, 6, 0, 0, 0, 32, 0, 0, 0, 23, 0, 4, 0, 7, 0, 0, 0, 6, 0, 0, 0, 3, 0, 0, 0, 32, 0, 4, 0, 8, 0, 0, 0, 7, 0, 0, 0, 7, 0, 0, 0, 43, 0, 4, 0, 6, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 43, 0, 4, 0, 6, 0, 0, 0, 11, 0, 0, 0, 0, 0, -128, 63, 44, 0, 6, 0, 7, 0, 0, 0, 12, 0, 0, 0, 10, 0, 0, 0, 11, 0, 0, 0, 10, 0, 0, 0, 32, 0, 4, 0, 14, 0, 0, 0, 1, 0, 0, 0, 7, 0, 0, 0, 59, 0, 4, 0, 14, 0, 0, 0, 15, 0, 0, 0, 1, 0, 0, 0, 23, 0, 4, 0, 18, 0, 0, 0, 6, 0, 0, 0, 4, 0, 0, 0, 32, 0, 4, 0, 19, 0, 0, 0, 3, 0, 0, 0, 18, 0, 0, 0, 59, 0, 4, 0, 19, 0, 0, 0, 20, 0, 0, 0, 3, 0, 0, 0, 44, 0, 7, 0, 18, 0, 0, 0, 21, 0, 0, 0, 11, 0, 0, 0, 11, 0, 0, 0, 11, 0, 0, 0, 11, 0, 0, 0, 43, 0, 4, 0, 6, 0, 0, 0, 25, 0, 0, 0, 0, 0, 0, 63, 54, 0, 5, 0, 2, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, -8, 0, 2, 0, 5, 0, 0, 0, 59, 0, 4, 0, 8, 0, 0, 0, 9, 0, 0, 0, 7, 0, 0, 0, 59, 0, 4, 0, 8, 0, 0, 0, 13, 0, 0, 0, 7, 0, 0, 0, 62, 0, 3, 0, 9, 0, 0, 0, 12, 0, 0, 0, 61, 0, 4, 0, 7, 0, 0, 0, 16, 0, 0, 0, 15, 0, 0, 0, 12, 0, 6, 0, 7, 0, 0, 0, 17, 0, 0, 0, 1, 0, 0, 0, 69, 0, 0, 0, 16, 0, 0, 0, 62, 0, 3, 0, 13, 0, 0, 0, 17, 0, 0, 0, 62, 0, 3, 0, 20, 0, 0, 0, 21, 0, 0, 0, 61, 0, 4, 0, 7, 0, 0, 0, 22, 0, 0, 0, 9, 0, 0, 0, 61, 0, 4, 0, 7, 0, 0, 0, 23, 0, 0, 0, 13, 0, 0, 0, -108, 0, 5, 0, 6, 0, 0, 0, 24, 0, 0, 0, 22, 0, 0, 0, 23, 0, 0, 0, -123, 0, 5, 0, 6, 0, 0, 0, 26, 0, 0, 0, 24, 0, 0, 0, 25, 0, 0, 0, -127, 0, 5, 0, 6, 0, 0, 0, 27, 0, 0, 0, 26, 0, 0, 0, 25, 0, 0, 0, 61, 0, 4, 0, 18, 0, 0, 0, 28, 0, 0, 0, 20, 0, 0, 0, -114, 0, 5, 0, 18, 0, 0, 0, 29, 0, 0, 0, 28, 0, 0, 0, 27, 0, 0, 0, 62, 0, 3, 0, 20, 0, 0, 0, 29, 0, 0, 0, -3, 0, 1, 0, 56, 0, 1, 0 };
+
+
 	void Renderer::InitDefaultPipeline() {
 		VkShaderModule triangleFragShader;
-		auto frag = vkutil::read_file("shaders/frag.spv");
+		auto frag = frag_shader_data;
+		//auto frag = vkutil::read_file("shaders/frag.spv");
 		if (!vkutil::load_shader_module(frag, device, &triangleFragShader)) {
 			printl("Error when building the triangle fragment shader module");
 		}
 		else {
 			printl("Triangle fragment shader succesfully loaded");
 		}
-
 		VkShaderModule triangleVertexShader;
-		auto vert = vkutil::read_file("shaders/vert.spv");
+		auto vert = vert_shader_data;
+		//auto vert = vkutil::read_file("shaders/vert.spv");
 		if (!vkutil::load_shader_module(vert, device, &triangleVertexShader)) {
 			printl("Error when building the triangle vertex shader module");
 		}
@@ -3177,7 +3462,7 @@ namespace tde {
 
 		return imageView;
 	}
-}#include "Model.h"
+} 
 
 
 namespace tde{
@@ -3363,7 +3648,7 @@ std::vector<uint16_t> tde::Model::cube_indices{
 	0	, 	1	, 	5,
 	12	, 	10	, 	11,
 	8	, 	6	, 	7,
-};#include "application.h"
+}; 
 
 //Time & Input impl + Platform static app default assignment
 namespace tde {
@@ -3782,5 +4067,5 @@ namespace tde {
 		return rval;
 	}
 } 
-#endif //TDE_IMPLEMENTATION  
-#endif //TDE_IMPLEMENTATION  
+ 
+#endif //TOP_DOG_IMPLEMENTATION 
