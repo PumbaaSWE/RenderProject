@@ -40,7 +40,7 @@ call:append application.cpp
 Echo( >> single_header\tdeTopDogEngine.h
 Echo #endif //TOP_DOG_IMPLEMENTATION >> single_header\tdeTopDogEngine.h
 
-echo Dit it!
+echo Did it!
 
 pause
 exit
