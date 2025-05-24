@@ -14,6 +14,7 @@
 * =====HOW TO SET UP!=====
 *
 * Make Sure to have Vulkan SDK installed (https://www.lunarg.com/vulkan-sdk/)
+* When installing, make sure to include the "GLM Headers" component.
 *
 * Make sure the Enviroment variable VULKAN_SDK is set to the installation folder
 * probably done when installing the SDK
@@ -23,6 +24,8 @@
 * in PowerShell:
 * [Environment]::SetEnvironmentVariable('VULKAN_SDK','C:\VulkanSDK\1.3.211.0')
 * [Environment]::GetEnvironmentVariable('VULKAN_SDK')
+* 
+* Restart Visual Studio after properly setting up VULKAN_SDK
 *
 * Set up Visual Studio: (Right click Your Project under Solution in Solution Explorer>Properties)
 *
@@ -143,7 +146,7 @@ int main()
 	Version 0.0
 	2025-05-19
 	- First ever test of the software as one header with Vulkan 1.3
-	- Read obj files, limitations: needs to be triangulated, contain no submeshes, less than 16000 verts, possibli some more
+	- Read obj files, limitations: needs to be triangulated, contain no submeshes, less than 16000 verts, possibly some more
 	- One hardcoded pipeline
 	- Two hardecoded default shaders (vert and frag) in binary form
 	- Support to read shaders in SPRV format
@@ -159,9 +162,15 @@ int main()
 	2025-05-23
 	- Added more KeyCodes
 	- Added Known bugs to this 
+
+	Version 0.3
+	2025-05-24
+	- Updated set up instructions
+	- Updated Known bugs
 */
 
 /*
 	KNOWN BUGS:
-	- Minimizing is not handled properly and validation layers freak out about it 
+	- Minimizing is not handled properly and validation layers freak out about it
+	- Changing resolution while running is not handled properly and can cause a crash in some cases
 */
