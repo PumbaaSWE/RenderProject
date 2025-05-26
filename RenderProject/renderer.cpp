@@ -5,6 +5,7 @@
 #include "Pipeline.h"
 #include "Model.h"
 #include "obj_loader.h"
+#include <source_location>
 
 //this spart below should be copied with implementation guard once we get to it
 
@@ -12,9 +13,9 @@
 
 namespace tde {
 
-	inline void vk_check(VkResult err, const char* msg = "Default") {
+	inline void vk_check(VkResult err, const char* msg = "Default", const std::source_location& location = std::source_location::current()) {
 		if (err) {
-			std::cout << msg << " error code: " << err << std::endl;
+			std::cout << msg << " error code: " << err << " on line: " << location.line() << std::endl;
 			abort();//throw?
 		}
 		
@@ -484,16 +485,17 @@ namespace tde {
 
 
 
-		vk_check(vkWaitForFences(device, 1, &get_current_frame().inFlightFence, true, 1000000000));
-		vk_check(vkResetFences(device, 1, &get_current_frame().inFlightFence));
+		vkWaitForFences(device, 1, &get_current_frame().inFlightFence, true, 1000000000);
 
 		
 		VkResult e = swapchain.AcquireNextImage(get_current_frame().imageAvailableSemaphore, swapchainImageIndex);// vkAcquireNextImageKHR(device, swapchain, 1000000000, get_current_frame().imageAvailableSemaphore, nullptr, &swapchainImageIndex);
 		if (e == VK_ERROR_OUT_OF_DATE_KHR) {
 			resize_requested = true;
+			//ResizeSwapchain();
 			return;
 		}
 
+		vk_check(vkResetFences(device, 1, &get_current_frame().inFlightFence));
 
 
 		VkCommandBuffer cmd = get_current_frame().mainCommandBuffer;
@@ -553,6 +555,9 @@ namespace tde {
 		//bind the pipeline
 		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, trianglePipeline);
 
+
+
+
 		//set dynamic state
 		VkViewport viewport{};
 		viewport.x = 0.0f;
@@ -577,6 +582,13 @@ namespace tde {
 	}
 	
 	void Renderer::EndFrame() {
+
+		if (resize_requested) {
+			//ResizeSwapchain();
+			return;
+		}
+
+
 		VkCommandBuffer cmd = get_current_frame().mainCommandBuffer;
 		vkCmdEndRendering(cmd);
 
