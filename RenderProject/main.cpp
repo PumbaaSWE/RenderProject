@@ -1,19 +1,29 @@
 #include "application.h"
 #include "obj_loader.h"
-//#include "vk_images.h"
 #include "Model.h"
-
-
 
 class Application1 : public tde::Application
 {
+	class Sphere {
+	public:
+		tde::Model* model;
+		glm::vec3 pos;
+		float radius;
+
+		void Draw() {
+			glm::mat4 transform = glm::mat4(1.0f);
+			transform = glm::translate(transform, pos);
+			transform = glm::scale(transform, { radius, radius, radius });	// Adjust scale based on the sphere model...
+			(*model).Draw(transform);
+		}
+	};
 
 	float time = 0;
 	int secs = 0;
 	bool showTime = false;
 
-	tde::Model plane;
-
+	tde::Model model;
+	std::vector<Sphere> spheres;
 
 public:
 	Application1()
@@ -22,7 +32,12 @@ public:
 	}
 
 	void Init() override {
-		plane = tde::Model(&GetRenderer(), tde::Model::cube_verts, tde::Model::cube_indices);
+		model = tde::Model(&GetRenderer(), tde::Model::cube_verts, tde::Model::cube_indices);
+
+		// Test spheres.. but cubes right now
+		spheres.push_back({ &model, { 0, 0, 0 }, 1.0f });
+		spheres.push_back({ &model, { 2, 0, 0 }, 2.0f });
+		spheres.push_back({ &model, { 5, 0, 0 }, 3.0f });
 	}
 
 
@@ -48,23 +63,9 @@ public:
 		glm::mat4 identity = glm::mat4(1.0f); //this is currently not used
 		renderer->SetUniformBuffer(identity, view, proj);
 
-		
-
-		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::rotate(model, 60.0f, { 0,1,1 }); // rotate around the y axis
-		plane.Draw(model);
-
-		glm::mat4 model2 = glm::mat4(1.0f);
-		model2 = glm::translate(model2, { .6, 0, 8 });
-		model2 = glm::rotate(model2, 3.0f, { 0,1,0 }); // rotate around the y axis
-		plane.Draw(model2);
-
-		glm::mat4 model3 = glm::mat4(1.0f);
-		model3 = glm::translate(model3, { 0, .7, 4 });
-		model3 = glm::rotate(model3, 70.0f, { 1,1,0 }); // rotate around the y axis
-		plane.Draw(model3);
+		for (auto& sphere : spheres)
+			sphere.Draw();
 	}
-
 };
 
 std::vector<char> read_file(const char* filePath) {
