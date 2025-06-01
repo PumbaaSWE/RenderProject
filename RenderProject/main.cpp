@@ -12,8 +12,9 @@ class Application1 : public tde::Application
 
 		void Draw() {
 			glm::mat4 transform = glm::mat4(1.0f);
-			transform = glm::scale(transform, { radius, radius, radius });	// Adjust scale based on the sphere model...
+			float radius = this->radius * 0.25f; // Adjust scale based on the sphere model...
 			transform = glm::translate(transform, pos);
+			transform = glm::scale(transform, { radius, radius, radius });
 			model->Draw(transform);
 		}
 	};
@@ -32,9 +33,24 @@ public:
 	}
 
 	void Init() override {
-		model = tde::Model(&GetRenderer(), tde::Model::cube_verts, tde::Model::cube_indices);
+		std::vector<obj_loader::Vertex> v;
+		std::vector<uint16_t> i;
 
-		// Test spheres.. but cubes right now
+		if (obj_loader::LoadFromFile("sphere.obj", v, i))
+		{
+			std::vector<tde::Vertex> vertices;
+			vertices.reserve(v.size());
+			for (const auto& vertex : v)
+			{
+				tde::Vertex tdeVertex;
+				tdeVertex.pos = vertex.pos;
+				tdeVertex.normal = vertex.normal;
+				vertices.push_back(tdeVertex);
+			}
+			model = tde::Model(&GetRenderer(), vertices, i);
+		}
+
+		// Test spheres
 		spheres.push_back({ &model, { 0, 0, -5}, 1.0f});
 		spheres.push_back({ &model, { 2, 0, -5 }, 2.0f });
 		spheres.push_back({ &model, { 5, 0, -5 }, 3.0f });
