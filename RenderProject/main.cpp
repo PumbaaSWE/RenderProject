@@ -82,6 +82,8 @@ public:
 		physics.planes.resize(4);
 		physics.planes[1].pos = { 0,-1,0 };
 		physics.planes[1].n = glm::normalize(vec3_t{ -1, 1, 1 });
+		physics.planes[2].pos = { 2,-1,2 };
+		physics.planes[2].n = glm::normalize(vec3_t{ 1, 1, -1 });
 	}
 
 
@@ -118,8 +120,28 @@ public:
 		}
 
 		for (auto& p : physics.planes) {
-			//don know how to draw this correctly...
-			//plane.Draw(t);
+			glm::vec3 forward = -glm::normalize(p.n); // since quad faces -Z
+
+			// Pick a suitable up vector not parallel to forward
+			glm::vec3 up = glm::abs(forward.y) < 0.999f ? glm::vec3(0, 1, 0) : glm::vec3(1, 0, 0);
+
+			// Build orthonormal basis
+			glm::vec3 xAxis = glm::normalize(glm::cross(up, forward));   // right
+			glm::vec3 yAxis = glm::normalize(glm::cross(forward, xAxis)); // up
+			glm::vec3 zAxis = forward; // forward direction for the quad (-normal)
+
+			// Build rotation matrix
+			glm::mat4 rotation(1.0f);
+			rotation[0] = glm::vec4(xAxis, 0.0f);
+			rotation[1] = glm::vec4(yAxis, 0.0f);
+			rotation[2] = glm::vec4(zAxis, 0.0f);
+
+			// Add translation
+			glm::mat4 t = glm::translate(glm::mat4(1), p.pos);
+			t = t * rotation;
+			t = glm::scale(t, glm::vec3(10.0f, 100.0f, 100.0f)); // Scale the quad
+
+			plane.Draw(t);
 		}
 	}
 };

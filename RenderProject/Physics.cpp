@@ -43,9 +43,9 @@ bool phys::CircleVsPlane(const Circle& c, const Plane& p, glm::vec3& x) {
 	return false;
 }
 
-bool phys::CircleVsCircle(const Circle& c1, const Circle& c2) {
-	glm::vec3 delta = c2.pos - c1.pos;
-	float sq_dist = glm::length2(delta); //if "0" just bleh..
-	float r = (c1.r + c2.r);
-	return sq_dist <= r * r;
-}
+//bool phys::CircleVsCircle(const Circle& c1, const Circle& c2) {
+//	glm::vec3 delta = c2.pos - c1.pos;
+//	float sq_dist = glm::length2(delta); //if "0" just bleh..
+//	float r = (c1.r + c2.r);
+//	return sq_dist <= r * r;
+//}
