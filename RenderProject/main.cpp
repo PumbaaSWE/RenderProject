@@ -79,11 +79,11 @@ public:
 			physics.rbs[i].circle.pos = { i, 15, 0 };
 		}
 		//add some planes
-		physics.planes.resize(4);
-		physics.planes[1].pos = { 0,-1,0 };
-		physics.planes[1].n = glm::normalize(vec3_t{ -1, 1, 1 });
-		physics.planes[2].pos = { 2,-1,2 };
-		physics.planes[2].n = glm::normalize(vec3_t{ 1, 1, -1 });
+		physics.planes.resize(2);
+		physics.planes[0].pos = { 0,0,0 };
+		physics.planes[0].n = glm::normalize(vec3_t{ -1, 1, 0 });
+		physics.planes[1].pos = { 0,0,0 };
+		physics.planes[1].n = glm::normalize(vec3_t{ 1, 1, 0 });
 	}
 
 
@@ -139,7 +139,8 @@ public:
 			// Add translation
 			glm::mat4 t = glm::translate(glm::mat4(1), p.pos);
 			t = t * rotation;
-			t = glm::scale(t, glm::vec3(10.0f, 100.0f, 100.0f)); // Scale the quad
+			t = glm::translate(t, glm::vec3(0.0f, 25.0f, 0.0f)); // Translate after rotating to move in local space
+			t = glm::scale(t, glm::vec3(25.0f, 25.0f, 25.0f)); // Scale the quad
 
 			plane.Draw(t);
 		}
