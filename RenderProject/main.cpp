@@ -7,9 +7,11 @@
 class Application1 : public tde::Application
 {
 	phys::Physics physics;
+
 	tde::Model cube;
 	tde::Model sphere;
 	tde::Model plane;
+
 	std::unique_ptr<Camera> camera;
 
 public:
@@ -20,7 +22,7 @@ public:
 
 	void Init() override {
 
-		camera = std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, -10.0f));
+		camera = std::make_unique<Camera>(glm::vec3(0.0f, -10.0f, -10.0f));
 		//camera->sens = 10;
 
 		cube = tde::Model(&GetRenderer(), tde::Model::cube_verts, tde::Model::cube_indices);
@@ -53,16 +55,7 @@ public:
 
 	void Render(float dt, float extrapolation) override {
 
-
-		mat4_t proj = glm::perspective(glm::radians(60.0f), 720.0f / 420.0f, 0.1f, 1000.0f); //This only change when fov or zNear/zFar changes
-		proj[1][1] *= -1; //GLM is flipped (OpenGL v Vulkan up? y neg up or down?)
-
-		glm::mat4 view = glm::mat4(1.0f);
-		view = glm::translate(view, { 0, 0, -10 });
-
-
-		glm::mat4 identity = glm::mat4(1.0f); //This is currently not used
-		renderer->SetUniformBuffer(identity, camera->view, camera->proj);
+		renderer->SetUniformBuffer(glm::mat4(1.0f), camera->view, camera->proj);
 
 		//Render spheres
 		for (auto& rb : physics.rbs) {
