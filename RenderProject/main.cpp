@@ -29,6 +29,23 @@ public:
 		sphere = tde::Model(&GetRenderer(), tde::Model::sphere_verts, tde::Model::sphere_indices);
 		plane = tde::Model(&GetRenderer(), tde::Model::plane_verts, tde::Model::plane_indices);
 
+		//Load a model from file
+		std::vector<obj_loader::Vertex> v;
+		std::vector<uint16_t> i;
+		if (obj_loader::LoadFromFile("cow.obj", v, i))
+		{
+			std::vector<tde::Vertex> vertices;
+			vertices.reserve(v.size());
+			for (const auto& vertex : v)
+			{
+				tde::Vertex tdeVertex;
+				tdeVertex.pos = vertex.pos;
+				tdeVertex.normal = vertex.normal;
+				vertices.push_back(tdeVertex);
+			}
+			sphere = tde::Model(&GetRenderer(), vertices, i);
+		}
+
 		//Add some rigidbodies (spheres)
 		for (size_t i = 0; i < 15; i++)
 		{
@@ -61,6 +78,10 @@ public:
 		for (auto& rb : physics.rbs) {
 			glm::mat4 t = glm::mat4(1.0f);
 			t = glm::translate(t, rb.circle.pos);
+
+			t = glm::scale(t, glm::vec3(0.25f,
+										0.25f,
+										0.25f)); // cow scale
 			sphere.Draw(t);
 		}
 
@@ -85,8 +106,14 @@ public:
 			// Add translation
 			glm::mat4 t = glm::translate(glm::mat4(1), p.pos);
 			t = t * rotation;
-			t = glm::translate(t, glm::vec3(0.0f, 25.0f, 0.0f)); // Translate after rotating to move in local space
-			t = glm::scale(t, glm::vec3(25.0f, 25.0f, 25.0f)); // Scale the quad
+
+			t = glm::translate(t, glm::vec3(0.0f,
+											25.0f,
+											0.0f)); // Translate after rotating to move in local space
+
+			t = glm::scale(t, glm::vec3(25.0f,
+										25.0f,
+										25.0f)); // Scale the quad
 
 			plane.Draw(t);
 		}
