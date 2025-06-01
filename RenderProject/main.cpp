@@ -12,9 +12,9 @@ class Application1 : public tde::Application
 
 		void Draw() {
 			glm::mat4 transform = glm::mat4(1.0f);
-			transform = glm::translate(transform, pos);
 			transform = glm::scale(transform, { radius, radius, radius });	// Adjust scale based on the sphere model...
-			(*model).Draw(transform);
+			transform = glm::translate(transform, pos);
+			model->Draw(transform);
 		}
 	};
 
@@ -35,9 +35,9 @@ public:
 		model = tde::Model(&GetRenderer(), tde::Model::cube_verts, tde::Model::cube_indices);
 
 		// Test spheres.. but cubes right now
-		spheres.push_back({ &model, { 0, 0, 0 }, 1.0f });
-		spheres.push_back({ &model, { 2, 0, 0 }, 2.0f });
-		spheres.push_back({ &model, { 5, 0, 0 }, 3.0f });
+		spheres.push_back({ &model, { 0, 0, -5}, 1.0f});
+		spheres.push_back({ &model, { 2, 0, -5 }, 2.0f });
+		spheres.push_back({ &model, { 5, 0, -5 }, 3.0f });
 	}
 
 
