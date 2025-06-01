@@ -137,6 +137,7 @@
   <ItemGroup>
     <ClInclude Include="application.h" />
     <ClInclude Include="Buffer.h" />
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="Descriptors.h" />
     <ClInclude Include="Device.h" />
     <ClInclude Include="HeaderInfoText.h" />
@@ -144,6 +145,7 @@
     <ClInclude Include="LineRenderer.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="obj_loader.h" />
+    <ClInclude Include="Physics.h" />
     <ClInclude Include="Pipeline.h" />
     <ClInclude Include="renderer.h" />
     <ClInclude Include="stuff.h" />
@@ -161,6 +163,7 @@
     <ClCompile Include="LineRenderer.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Model.cpp" />
+    <ClCompile Include="Physics.cpp" />
     <ClCompile Include="Pipeline.cpp" />
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="Swapchain.cpp" />

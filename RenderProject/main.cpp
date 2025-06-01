@@ -1,6 +1,8 @@
 #include "application.h"
 #include "obj_loader.h"
 #include "Model.h"
+#include "Physics.h"
+#include "Camera.h"
 
 class Application1 : public tde::Application
 {
@@ -26,6 +28,12 @@ class Application1 : public tde::Application
 	tde::Model model;
 	std::vector<Sphere> spheres;
 
+	phys::Physics physics;
+	tde::Model cube;
+	tde::Model sphere;
+	tde::Model plane;
+	std::unique_ptr<Camera> camera;
+
 public:
 	Application1()
 	{
@@ -33,6 +41,10 @@ public:
 	}
 
 	void Init() override {
+
+		camera = std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, -10.0f));
+		//camera->sens = 10;
+
 		std::vector<obj_loader::Vertex> v;
 		std::vector<uint16_t> i;
 
@@ -54,16 +66,32 @@ public:
 		spheres.push_back({ &model, { 0, 0, -5}, 1.0f});
 		spheres.push_back({ &model, { 2, 0, -5 }, 2.0f });
 		spheres.push_back({ &model, { 5, 0, -5 }, 3.0f });
+
+
+
+		cube = tde::Model(&GetRenderer(), tde::Model::cube_verts, tde::Model::cube_indices);
+		sphere = tde::Model(&GetRenderer(), tde::Model::sphere_verts, tde::Model::sphere_indices);
+		plane = tde::Model(&GetRenderer(), tde::Model::plane_verts, tde::Model::plane_indices);
+
+		for (size_t i = 0; i < 10; i++)
+		{
+			physics.rbs.emplace_back();
+			physics.rbs[i].circle.pos = { i, 15, 0 };
+		}
+		//add some planes
+		physics.planes.resize(4);
+		physics.planes[1].pos = { 0,-1,0 };
+		physics.planes[1].n = glm::normalize(vec3_t{ -1, 1, 1 });
 	}
 
 
 	void FixedUpdate(float dt) override {
-
+		physics.Step(dt);
 	}
 
 
 	void Update(float dt) override {
-
+		camera->Update(dt);
 
 	}
 	void Render(float dt, float extrapolation) override {
@@ -77,10 +105,22 @@ public:
 
 
 		glm::mat4 identity = glm::mat4(1.0f); //this is currently not used
-		renderer->SetUniformBuffer(identity, view, proj);
+		renderer->SetUniformBuffer(identity, camera->view, camera->proj);
 
 		for (auto& sphere : spheres)
 			sphere.Draw();
+
+
+		for (auto& rb : physics.rbs) {
+			glm::mat4 t = glm::mat4(1.0f);
+			t = glm::translate(t, rb.circle.pos);
+			sphere.Draw(t); //or don't draw... 
+		}
+
+		for (auto& p : physics.planes) {
+			//don know how to draw this correctly...
+			//plane.Draw(t);
+		}
 	}
 };
 
