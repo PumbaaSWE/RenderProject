@@ -9,19 +9,15 @@ void phys::Physics::Step(float dt)
 		}
 	}
 
-
 	vec3_t hit{ 0, 0 ,0 };
 	for (auto& rb : rbs) {
-
 
 		for (auto& pl : planes)
 		{
 			if (phys::CircleVsPlane(rb.circle, pl, hit)) {
 				rb.vel = glm::reflect(rb.vel, pl.n);
 			}
-
 		}
-
 	}
 
 	for (auto& rb : rbs) {

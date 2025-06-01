@@ -1,9 +1,6 @@
 #pragma once
 //#include "tdeTopDogEngine.h"
 #include "stuff.h"
-//#include <glm/gtx/norm.hpp>
-
-
 
 namespace phys {
 
