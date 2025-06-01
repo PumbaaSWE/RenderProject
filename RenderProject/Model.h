@@ -32,6 +32,12 @@ namespace tde {
 
 		static std::vector<tde::Vertex> cube_verts;
 		static std::vector<uint16_t> cube_indices;
+
+		static std::vector<tde::Vertex> sphere_verts;
+		static std::vector<uint16_t> sphere_indices;
+
+		static std::vector<tde::Vertex> plane_verts;
+		static std::vector<uint16_t> plane_indices;
 	};
 }
 

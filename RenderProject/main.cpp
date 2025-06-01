@@ -102,7 +102,7 @@ int main()
 	//};
 
 	//std::vector<obj_loader::Vertex> verts;
-	//obj_loader::LoadFromFile("D:\\Blender\\cube\\cube.obj", verts, indices);
+	//obj_loader::LoadFromFile("sphere.obj", verts, indices);
 	//std::ofstream myfile;
 	//myfile.open("example.txt");
 	//
@@ -116,9 +116,9 @@ int main()
 	//myfile << "std::vector<vec3_t> verts = {" << std::endl;
 	//for (size_t i = 0; i < verts.size(); i++)
 	//{
-	//	myfile << "{ \t" << verts[i].pos.x << "\t, \t" << verts[i].pos.y << "\t, \t" << verts[i].pos.z << "\t}, \t";
+	//	myfile << "{{ \t" << verts[i].pos.x << "\t, \t" << verts[i].pos.y << "\t, \t" << verts[i].pos.z << "\t}, \t";
 	//	myfile << "{ \t" << verts[i].normal.x << "\t, \t" << verts[i].normal.y << "\t, \t" << verts[i].normal.z << "\t},";
-	//	myfile << "{ \t" << verts[i].uv.x << "\t, \t" << verts[i].uv.y << "\t},";
+	//	myfile << "{ \t" << verts[i].uv.x << "\t, \t" << verts[i].uv.y << "\t}},";
 	//	myfile << std::endl;
 	//}
 	//myfile << "};" << std::endl;
